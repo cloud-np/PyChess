@@ -1,5 +1,6 @@
 """bitarray: efficient arrays of booleans."""
-from bitarray import bitarray
+# from bitarray import bitarray
+import numpy as np
 BOARD_SIZE = 64 
 
 class Board:
@@ -7,5 +8,10 @@ class Board:
     
     def __init__(self):
         """Construct all the necessary attributes for the board object."""    
-        self.white_pieces = BOARD_SIZE * bitarray('0')
-        self.black_pieces = BOARD_SIZE * bitarray('0')
+        self.pieces = np.zeros((BOARD_SIZE))
+        # self.black_pieces = BOARD_SIZE * bitarray('0')
+    
+    # def show_white_pieces_pos():
+    #     for
+    # def __str__(self):
+
