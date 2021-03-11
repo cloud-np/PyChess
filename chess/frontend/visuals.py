@@ -56,3 +56,45 @@ class GameVisuals:
         # self.screen.fill([255, 255, 255])
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background.image, self.background.rect)
+    
+    def draw_pieces(self):
+        x_pos = 0
+        y_pos = 0
+        color = 0
+        width = 100
+        height = 100
+        black = (103, 130, 74)
+        white = (204, 255, 204)  # (255, 255, 204)
+
+        i = 0
+        for x in range(self.board.rows):
+            for y in range(self.board.cols):
+                # Draw rect
+                # TODO: THIS WILL NEED CHANGE LATER ON
+                if color % 2 == 0:
+                    self.board.tiles[x][y].shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
+                    self.board.tiles[x][y].is_white = True
+                    # self.draw_rect(screen, x, y, x_pos, y_pos, width, height, white)
+                else:
+                    self.board.tiles[x][y].shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
+                    self.board.tiles[x][y].is_white = False
+                    # self.draw_rect(screen, x, y, x_pos, y_pos, width, height, black)
+
+                piece = self.board.tiles[x][y].piece
+
+                # Draw pieces and add the piece to 'database'
+                if piece is not None:
+                    img = pygame.image.load(piece.image_path)
+                    img = pygame.transform.scale(img, (100, 100))
+                    # self.board.pieces.append([img, [x_pos, y_pos], piece])
+                    piece.image = img
+                    self.board.pieces.append(piece)
+
+                # if self.debug is True:
+                #     print(f'x: {x_pos} y: {y_pos} i: {i}')
+                x_pos += 100
+                color += 1
+                i += 1
+            y_pos += 100
+            color += 1
+            x_pos = 0

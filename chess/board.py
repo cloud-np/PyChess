@@ -1,4 +1,4 @@
-"""bitarray: efficient arrays of booleans."""
+"""board module contains all the classes and methods which are needed for a chessboard to be functional."""
 # from bitarray import bitarray
 import numpy as np
 BOARD_SIZE = 64 

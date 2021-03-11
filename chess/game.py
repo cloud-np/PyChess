@@ -1,15 +1,24 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
+
+from pygame.constants import QUIT
 from chess.board import Board
 import pygame
 from datetime import datetime
 from chess.frontend.visuals import GameVisuals
 
+class EventType:
+    """Enum that holds the types of events."""    
+
+    QUIT = -1
+    NO_EVENT = 0 
+    STOP = 1 
+    START = 2 
 
 class Game:
     """This will holds all the info about the game and the players."""
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, player1="PC", player2="PC"):
         """Construct."""
         self.id: uuid4 = uuid4()
         self.time_created = datetime.now()
@@ -31,11 +40,11 @@ class Game:
     def main_loop(self):
         """Major loop of the program."""        
         # Game Loop
-        running = True
+        is_running = True
         rect_img = clicked_rect = None
         player_turn = 0
 
-        while running:
+        while is_running:
 
             # Keep tracking the position of the mouse
             mouse_x, mouse_y = self.py_g.mouse.get_pos()
@@ -53,15 +62,9 @@ class Game:
             #         self.screen.blit(piece.image, (tile.shape['x'], tile.shape['y']))
 
             # Look for the game_events
-            for event in self.py_g.event.get():
-                if event.type == self.py_g.QUIT:
-                    running = False
-                    self.py_g.quit()
-                # elif event.type == self.py_g.MOUSEBUTTONDOWN or event.type == self.py_g.MOUSEBUTTONUP:
-                #     pick_piece(mouse_x, mouse_y)
-                # elif P2_COMPUTER and history['player'] % 2 != 0:
-                #     self.pc_make_move(history, False)
-                #     history['player'] += 1
+            event_code = self.check_for_events()
+            if event_code == EventType.QUIT:
+                is_running = False
 
             # If the player has a piece picked
             # if history['drag_flag']:
@@ -71,3 +74,23 @@ class Game:
             self.py_g.display.update()
 
             pass  # While loop
+
+    def check_for_events(self):
+        """Check for events that may occur during the game.
+
+        Returns
+        -------
+        int
+            An Event enum that shows which event occured if any.
+        """        
+        for event in self.py_g.event.get():
+            if event.type == self.py_g.QUIT:
+                self.py_g.quit()
+                return EventType.QUIT
+            elif event.type == self.py_g.MOUSEBUTTONDOWN or event.type == self.py_g.MOUSEBUTTONUP:
+            #     pick_piece(mouse_x, mouse_y)
+                pass
+            # elif P2_COMPUTER and history['player'] % 2 != 0:
+            #     self.pc_make_move(history, False)
+            #     history['player'] += 1
+        return EventType.NO_EVENT

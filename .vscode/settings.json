@@ -2,4 +2,5 @@
   "code-runner.executorMap": {
     "python": "$pythonPath -u main.py",
   },
+  "autoDocstring.docstringFormat": "numpy"
 }
