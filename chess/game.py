@@ -24,11 +24,12 @@ class Game:
                f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
 
     def start(self):
+        """Run basic setup functions."""        
         clock = self.py_g.time.Clock()
         self.main_loop()
 
     def main_loop(self):
-
+        """Major loop of the program."""        
         # Game Loop
         running = True
         rect_img = clicked_rect = None
