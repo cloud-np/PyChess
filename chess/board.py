@@ -22,14 +22,32 @@ class Board:
         self.fen: str = fen
         self.size = size
         self.state = self.get_state_from_fen(fen)
+        print(self)
 
     def get_state_from_fen(self, fen):
-        state = np.zeros((self.size), dtype="int")
+        """Given a fen it will return the board state.
+
+        Parameters
+        ----------
+        fen : str
+            A way to represent a chess board state.
+
+        Returns
+        -------
+        numpy.array(dtype="uint8")
+            A numpy array of unsigned 8 bit ints.
+
+        Raises
+        ------
+        ValueError
+            In case there is a wrong symbol in the fen.
+        """        
+        state = np.zeros((self.size), dtype="uint8")
         pos = 0
         for ch in fen:
             # Skip that many tiles.
             if ch in "12345678":
-                pos += int(ch) - 1  # -1 because we count from 0
+                pos += int(ch)  # -1 because we count from 0
                 continue
 
             # Find the color of the piece.
@@ -58,15 +76,25 @@ class Board:
             else:
                 raise ValueError(f"Unkown symbol in fen: {chl}")
 
-            if piece_code < 0:
-                raise ValueError(f"Incorrect piece_code value: {piece_code}")
-            else:
-                # Initialize the piece.
-                state[pos] = piece_code
-                pos += 1
+            # Occupy the pos.
+            state[pos] = piece_code
+            # print(f"[{pos}] = {piece_code}")
+            pos += 1
 
         return state
 
     # def show_white_pieces_pos():
     #     for
-    # def __str__(self):
+    def __str__(self):
+        x = 0
+        print('\t\t\t\t     BOARD')
+        print('      0     1     2     3     4     5     6     7')
+        print(x, end='   ')
+        for i, piece_code in enumerate(self.state):
+            if i % 8 == 0 and i != 0:
+                x += 1
+                print()
+                print(x, end='   ')
+            print(f'[ {Piece.find_symbol(piece_code)} ]', end=' ')
+            # print(f'[ {piece_code} ]', end=' ')
+        return ''

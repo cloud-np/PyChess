@@ -4,16 +4,19 @@
 class Piece:
     """Info about the piece type moves-set."""
 
-    EMPTY = 0b0
-    KING = 0b1
-    PAWN = 0b10
-    KNIGHT = 0b11
-    BISHOP = 0b100
-    ROOK = 0b101
-    QUEEN = 0b110
+    EMPTY  = 0 
+    KING   = 1
+    PAWN   = 2
+    KNIGHT = 3
+    BISHOP = 5
+    ROOK   = 6
+    QUEEN  = 7
 
-    WHITE = 0b1000
-    BLACK = 0b10000
+    WHITE  = 8
+    BLACK  = 16
+
+    TYPE_MASK = 0b00111
+    COLOUR_MASK = 0b11000
 
     # def __init__(self, piece_code):
     #     if piece_code <= 0:
@@ -21,6 +24,43 @@ class Piece:
 
     #     self.piece_code = piece_code
     #     self.moveset = self.__find_correct_moveset()
+
+    @staticmethod
+    def get_type(piece_code):
+        return piece_code & Piece.TYPE_MASK
+
+    @staticmethod
+    def get_colour(piece_code):
+        return piece_code & Piece.COLOUR_MASK
+
+    @staticmethod 
+    def get_colour_and_type(piece_code):
+        return (Piece.get_colour(piece_code), Piece.get_type(piece_code))
+
+    def find_symbol(piece_code):
+        symbol = ''
+        colour, type = Piece.get_colour_and_type(piece_code)
+
+        if type == Piece.EMPTY:
+            return ' '
+        if type == Piece.KING:
+            symbol += 'k'
+        elif type == Piece.PAWN:
+            symbol += 'p'
+        elif type == Piece.KNIGHT:
+            symbol += 'n'
+        elif type == Piece.BISHOP:
+            symbol += 'b'
+        elif type == Piece.ROOK:
+            symbol += 'r'
+        elif type == Piece.QUEEN:
+            symbol += 'q'
+        
+        if colour == Piece.WHITE:
+            return symbol.upper()
+        else:
+            return symbol
+
 
 
     def find_moveset(piece_code):

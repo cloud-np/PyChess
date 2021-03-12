@@ -43,7 +43,7 @@ class Tile:
 class GameVisuals:
     """Visuals for the game."""
 
-    def __init__(self, py_g, board_size):
+    def __init__(self, py_g, board_size, board_state):
         """Needs the same pygame module from the Game class.
 
         Parameters
@@ -62,8 +62,8 @@ class GameVisuals:
         # py_g.display.set_icon(py_g.image.load(
         #     "{IMGS_PATH}/chess_icon.png"))
 
-        # Draw Pieces
-        # self.draw_pieces()
+        self.py_g = py_g
+        self.create_tiles(board_state)
 
     def draw_bg(self):
         """Show the bg img to the screen."""
@@ -75,36 +75,48 @@ class GameVisuals:
     @staticmethod
     def get_img_for_piece(piece_code):
         path = f"{IMGS_PATH}/"
-        if piece_code & Piece.WHITE:
+
+        colour, type = Piece.get_colour_and_type(piece_code)
+
+        if colour == Piece.WHITE:
             path += 'w'
-        elif piece_code & Piece.BLACK:
+        elif colour == Piece.BLACK:
             path += 'b'
 
-        if piece_code & Piece.KING:
+        if type == Piece.KING:
             path += 'k'
-        elif piece_code & Piece.PAWN:
+        elif type == Piece.PAWN:
             path += 'p'
-        elif piece_code & Piece.KNIGHT:
+        elif type == Piece.KNIGHT:
             path += 'n'
-        elif piece_code & Piece.BISHOP:
+        elif type == Piece.BISHOP:
             path += 'b'
-        elif piece_code & Piece.ROOK:
+        elif type == Piece.ROOK:
             path += 'r'
-        elif piece_code & Piece.QUEEN:
+        elif type == Piece.QUEEN:
             path += 'q'
 
         return f"{path}.png"
+    
+    def draw_pieces(self):
+        for tile in self.tiles:
+            # if not piece.click:
+            if tile.piece_img is not None:
+                self.screen.blit(tile.piece_img, (tile.shape['x'], tile.shape['y']))
 
-    def draw_pieces(self, board_state):
+
+    def create_tiles(self, board_state):
         x_pos = 0
         y_pos = 0
-        color = 0
         width = 100
         height = 100
         # black = (103, 130, 74)
         # white = (204, 255, 204)  # (255, 255, 204)
 
         for i, tile in enumerate(self.tiles):
+            if i % 8 == 0 and i != 0:
+                x_pos = 0
+                y_pos += 100
             # Draw rect
             # TODO: THIS WILL NEED CHANGE LATER ON
             tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
@@ -115,8 +127,8 @@ class GameVisuals:
                 img = pygame.image.load(image_path)
                 img = pygame.transform.scale(img, (100, 100))
                 # self.board.pieces.append([img, [x_pos, y_pos], piece])
+                tile.piece_img = img
                 # piece.image = img
-                print("Where am i lol")
                 # self.board.pieces.append(piece)
             # else:
             #     print("LOL")
@@ -124,8 +136,5 @@ class GameVisuals:
             # if self.debug is True:
             #     print(f'x: {x_pos} y: {y_pos} i: {i}')
             x_pos += 100
-            color += 1
 
-            y_pos += 100
-            color += 1
-            x_pos = 0
+

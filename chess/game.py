@@ -8,7 +8,7 @@ from datetime import datetime
 from chess.frontend.visuals import GameVisuals
 
 
-S_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 BOARD_SIZE = 64
 
 
@@ -28,10 +28,10 @@ class Game:
         """Construct."""
         self.id: uuid4 = uuid4()
         self.time_created = datetime.now()
-        self.board: Board = Board(S_FEN, BOARD_SIZE)
         self.debug = debug
         self.py_g = pygame
-        self.visuals = GameVisuals(self.py_g, BOARD_SIZE)
+        self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
+        self.visuals = GameVisuals(self.py_g, BOARD_SIZE, self.board.state)
 
 
     def __str__(self) -> str:
@@ -48,8 +48,8 @@ class Game:
         """Major loop of the program."""
         # Game Loop
         is_running = True
-        rect_img = clicked_rect = None
-        player_turn = 0
+        # rect_img = clicked_rect = None
+        # player_turn = 0
 
         while is_running:
 
@@ -63,7 +63,7 @@ class Game:
             #     self.draw_player_move(history)
 
             # Keep pieces-img on the screen refreshed
-            self.visuals.draw_pieces(self.board.state)
+            self.visuals.draw_pieces()
             # for piece in self.board.pieces:
             #     if not piece.click:
             #         tile = self.board.tiles[piece.coords[0]][piece.coords[1]]
