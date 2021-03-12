@@ -83,9 +83,8 @@ class Board:
 
         return state
 
-    # def show_white_pieces_pos():
-    #     for
     def __str__(self):
+        """Print the board state."""        
         x = 0
         print('\t\t\t\t     BOARD')
         print('      0     1     2     3     4     5     6     7')

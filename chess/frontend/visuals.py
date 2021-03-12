@@ -32,9 +32,21 @@ class Background(pygame.sprite.Sprite):
 
 
 class Tile:
+    """Visual tile that helps showing the pieces on board."""    
 
-    def __init__(self, pos, name=' ', piece_img=None):
-        self.pos = pos
+    def __init__(self, index, name=' ', piece_img=None):
+        """Hold the info that are needed to be drawn later on.
+
+        Parameters
+        ----------
+        index : int
+            Shows the index on board
+        name : str
+            The name of the tile, by default ' '
+        piece_img : Surface, optional
+            Holds the img that we will draw on screen, by default None
+        """        
+        self.index = index
         self.name = name
         self.piece_img = piece_img
         self.shape = {'x': None, 'y': None, 'w': None, 'h': None}
@@ -58,22 +70,31 @@ class GameVisuals:
 
         # Title and icon
         py_g.display.set_caption("Chess")
-        print(f"{IMGS_PATH}/chess_icon.png")
-        # py_g.display.set_icon(py_g.image.load(
-        #     "{IMGS_PATH}/chess_icon.png"))
+        # Maybe this crashes only on linux.
+        # py_g.display.set_icon(py_g.image.load("{IMGS_PATH}/chess_icon.png"))
 
         self.py_g = py_g
         self.create_tiles(board_state)
 
     def draw_bg(self):
-        """Show the bg img to the screen."""
-        # Keep background-img on the screen refreshed
-        # self.screen.fill([255, 255, 255])
+        """Keep background-img on the screen refreshed."""
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background.image, self.background.rect)
 
     @staticmethod
     def get_img_for_piece(piece_code):
+        """Find the correct img for a piece.
+
+        Parameters
+        ----------
+        piece_code : uint8
+            A way we represent our pieces.
+
+        Returns
+        -------
+        str
+            The path of the piece img.
+        """
         path = f"{IMGS_PATH}/"
 
         colour, type = Piece.get_colour_and_type(piece_code)
@@ -99,6 +120,7 @@ class GameVisuals:
         return f"{path}.png"
     
     def draw_pieces(self):
+        """Keep showing the pieces on board."""        
         for tile in self.tiles:
             # if not piece.click:
             if tile.piece_img is not None:
@@ -106,6 +128,13 @@ class GameVisuals:
 
 
     def create_tiles(self, board_state):
+        """Make the visual tiles for the board.
+
+        Parameters
+        ----------
+        board_state : numpy.array(dtype="uint8")
+            Holds the information for every tile on board.
+        """
         x_pos = 0
         y_pos = 0
         width = 100
@@ -117,8 +146,6 @@ class GameVisuals:
             if i % 8 == 0 and i != 0:
                 x_pos = 0
                 y_pos += 100
-            # Draw rect
-            # TODO: THIS WILL NEED CHANGE LATER ON
             tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
             if board_state[i] > 0:
@@ -130,11 +157,7 @@ class GameVisuals:
                 tile.piece_img = img
                 # piece.image = img
                 # self.board.pieces.append(piece)
-            # else:
-            #     print("LOL")
 
             # if self.debug is True:
             #     print(f'x: {x_pos} y: {y_pos} i: {i}')
             x_pos += 100
-
-
