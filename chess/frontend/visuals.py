@@ -1,11 +1,23 @@
 """Creates the visuals for the game."""
-import pygame
+import pygame as py_g
+from pygame import cursors
 from chess.piece import Piece
 
 IMGS_PATH = "chess/assets/images"
 
+class EventType:
+    """Enum that holds the types of events."""
 
-class Background(pygame.sprite.Sprite):
+    QUIT = -1
+    NO_EVENT = 0
+    STOP = 1
+    START = 2
+    SHOW_INDEX = 3
+    MOUSE_BUTTONDOWN = 4
+    MOUSE_BUTTONUP = 5
+
+
+class Background(py_g.sprite.Sprite):
     """Helper class to keep showing a background image.
 
     Parameters
@@ -24,9 +36,9 @@ class Background(pygame.sprite.Sprite):
         location : list()
             where it should be showing on the screen.
         """
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.transform.scale(
-            pygame.image.load(image_file), (800, 800))
+        py_g.sprite.Sprite.__init__(self)
+        self.image = py_g.transform.scale(
+            py_g.image.load(image_file), (800, 800))
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
 
@@ -34,7 +46,10 @@ class Background(pygame.sprite.Sprite):
 class Tile:
     """Visual tile that helps showing the pieces on board."""    
 
-    def __init__(self, index, name=' ', piece_img=None):
+    W_TILE_CLICKED_COLOUR = (255, 204, 102)
+    B_TILE_CLICKED_COLOUR = (255, 179, 26)
+
+    def __init__(self, index, is_white=False, text_surface=None, name=' ', piece_img=None):
         """Hold the info that are needed to be drawn later on.
 
         Parameters
@@ -49,13 +64,15 @@ class Tile:
         self.index = index
         self.name = name
         self.piece_img = piece_img
+        self.is_white = is_white
+        self.text_surface = text_surface
         self.shape = {'x': None, 'y': None, 'w': None, 'h': None}
 
 
 class GameVisuals:
     """Visuals for the game."""
 
-    def __init__(self, py_g, board_size, board_state):
+    def __init__(self, game, board_size, board_state):
         """Needs the same pygame module from the Game class.
 
         Parameters
@@ -64,61 +81,126 @@ class GameVisuals:
             The pygame module that another class 
             should inisialize and pass it down here.
         """
+        self.game = game
+        self.show_indexes = False
+        self.clock = py_g.time.Clock()
         self.screen = py_g.display.set_mode((800, 800))
+        self.drag_piece = None
         self.background = Background(f"{IMGS_PATH}/board.png", [0, 0])
         self.tiles = [Tile(i) for i in range(board_size)]
 
         # Title and icon
         py_g.display.set_caption("Chess")
+        py_g.font.init() 
+        self.font = py_g.font.SysFont('Arial', 30)
         # Maybe this crashes only on linux.
         # py_g.display.set_icon(py_g.image.load("{IMGS_PATH}/chess_icon.png"))
 
-        self.py_g = py_g
-        self.create_tiles(board_state)
+        self.occupie_tiles(board_state)
+
+    def set_dragging_piece(self, index):
+        self.drag_piece = self.tiles[index]
 
     def draw_bg(self):
         """Keep background-img on the screen refreshed."""
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background.image, self.background.rect)
-
-    @staticmethod
-    def get_img_for_piece(piece_code):
-        """Find the correct img for a piece.
-
-        Parameters
-        ----------
-        piece_code : uint8
-            A way we represent our pieces.
-
-        Returns
-        -------
-        str
-            The path of the piece img.
-        """
-        path = f"{IMGS_PATH}/"
-
-        colour, type = Piece.get_colour_and_type(piece_code)
-
-        if colour == Piece.WHITE:
-            path += 'w'
-        elif colour == Piece.BLACK:
-            path += 'b'
-
-        if type == Piece.KING:
-            path += 'k'
-        elif type == Piece.PAWN:
-            path += 'p'
-        elif type == Piece.KNIGHT:
-            path += 'n'
-        elif type == Piece.BISHOP:
-            path += 'b'
-        elif type == Piece.ROOK:
-            path += 'r'
-        elif type == Piece.QUEEN:
-            path += 'q'
-
-        return f"{path}.png"
     
+    def draw_indexes(self):
+        """Show the index number of the tile on screen."""        
+        for tile in self.tiles:
+            tile.text_surface = self.font.render(f"{tile.index}", False, (0, 0, 0))
+            self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
+
+    def draw_drag_piece(self, m_pos):
+        """Show the picked piece."""
+        if self.drag_piece.piece_img is None:
+            raise Exception("You can't pick an empty tile.")
+        self.screen.blit(self.drag_piece.piece_img, (m_pos[0] - 50, m_pos[1] - 50))
+
+    def draw_played_move(self, tiles):
+        rect = [[], []]
+        for i, tile in enumerate(tiles):
+            for value in tile.shape.values():
+                if i == 0:
+                    rect[0].append(value)
+                else:
+                    rect[1].append(value)
+
+            if i == 0:
+                rect[0].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[0].append(Tile.B_TILE_CLICKED_COLOUR)
+            else:
+                rect[1].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[1].append(Tile.B_TILE_CLICKED_COLOUR)
+
+        py_g.draw.rect(self.screen, rect[0][4], (rect[0][0], rect[0][1], rect[0][2], rect[0][3]))
+        py_g.draw.rect(self.screen, rect[1][4], (rect[1][0], rect[1][1], rect[1][2], rect[1][3]))
+    
+    def main_loop(self):
+        """Major visual loop of the program."""
+        # Game Loop
+        is_running = True
+        drag = False
+        # rect_img = clicked_rect = None
+        # player_turn = 0
+
+        while is_running:
+            # Keep tracking the position of the mouse
+            mx, my = py_g.mouse.get_pos()
+
+            # Keep showing the bg
+            self.draw_bg()
+
+            # if history['moved_made']:
+            #     self.draw_player_move(history)
+
+            # Keep pieces-img on the screen refreshed
+            self.draw_pieces()
+
+            # Look for the game_events
+            event_code = self.check_for_events()
+            if event_code == EventType.QUIT:
+                is_running = False
+            elif event_code == EventType.SHOW_INDEX:
+                self.show_indexes = not self.show_indexes
+            elif event_code == EventType.MOUSE_BUTTONDOWN:
+                piece_code, index = self.tile_clicked(m_pos=(mx, my))
+                if self.game.is_piece_pickable(piece_code):
+                    drag = True
+                    self.change_cursor("diamond")
+                    self.set_dragging_piece(index) 
+                    # self.drag_piece(index)
+            elif event_code == EventType.MOUSE_BUTTONUP:
+                piece_code, index = self.tile_clicked(m_pos=(mx, my))
+                self.swap_imgs_to_tiles(self.drag_piece, self.tiles[index])
+                self.tiles[index].piece_img = self.drag_piece["img"]
+            
+            if drag:
+                self.draw_drag_piece(m_pos=(mx, my))
+
+            if self.show_indexes:
+                self.draw_indexes()
+            # If the player has a piece picked
+            # if history['drag_flag']:
+            #     self.screen.blit(history['dragged_piece'].image, (mouse_x - 50, mouse_y - 50))
+
+            # Update everything on the screen
+            py_g.display.update()
+
+            pass  # While loop
+    
+    def swap_imgs_to_tiles(self, old_tile, new_tile):
+        # self.
+        pass
+    
+    @staticmethod
+    def change_cursor(cursor):
+        if cursor == "diamond":
+            py_g.mouse.set_cursor(*py_g.cursors.diamond)
+        elif cursor == "arrow":
+            py_g.mouse.set_cursor(*py_g.cursors.arrow)
+  
+
+
     def draw_pieces(self):
         """Keep showing the pieces on board."""        
         for tile in self.tiles:
@@ -126,8 +208,42 @@ class GameVisuals:
             if tile.piece_img is not None:
                 self.screen.blit(tile.piece_img, (tile.shape['x'], tile.shape['y']))
 
+    def tile_clicked(self, m_pos):
+        index = (m_pos[1] // 100) * 8 + (m_pos[0] // 100)
+        piece_code = self.game.board.state[index]
 
-    def create_tiles(self, board_state):
+        if self.game.debug:
+            print(m_pos, f"tile: {index}")
+        return piece_code, index
+
+
+    def check_for_events(self):
+        """Check for events that may occur during the game.
+
+        Returns
+        -------
+        int
+            An Event enum that shows which event occured if any.
+        """
+        for event in py_g.event.get():
+            if event.type == py_g.QUIT:
+                py_g.quit()
+                return EventType.QUIT
+            elif event.type == py_g.MOUSEBUTTONDOWN:
+                return EventType.MOUSE_BUTTONDOWN 
+            elif event.type == py_g.MOUSEBUTTONUP:
+                return EventType.MOUSE_BUTTONUP
+            elif event.type == py_g.KEYDOWN:
+                if event.key == py_g.K_d:
+                    return EventType.SHOW_INDEX
+
+                #     pick_piece(mouse_x, mouse_y)
+            # elif P2_COMPUTER and history['player'] % 2 != 0:
+            #     self.pc_make_move(history, False)
+            #     history['player'] += 1
+        return EventType.NO_EVENT
+
+    def occupie_tiles(self, board_state):
         """Make the visual tiles for the board.
 
         Parameters
@@ -139,6 +255,7 @@ class GameVisuals:
         y_pos = 0
         width = 100
         height = 100
+        colour = True 
         # black = (103, 130, 74)
         # white = (204, 255, 204)  # (255, 255, 204)
 
@@ -146,17 +263,17 @@ class GameVisuals:
             if i % 8 == 0 and i != 0:
                 x_pos = 0
                 y_pos += 100
+                colour = not colour
+            tile.is_white = colour
+            colour = not colour
             tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
             if board_state[i] > 0:
-                image_path = GameVisuals.get_img_for_piece(board_state[i])
+                image_path = Piece.get_img_for_piece(board_state[i], IMGS_PATH)
                 # Draw pieces and add the piece to 'database'
-                img = pygame.image.load(image_path)
-                img = pygame.transform.scale(img, (100, 100))
-                # self.board.pieces.append([img, [x_pos, y_pos], piece])
+                img = py_g.image.load(image_path)
+                img = py_g.transform.scale(img, (100, 100))
                 tile.piece_img = img
-                # piece.image = img
-                # self.board.pieces.append(piece)
 
             # if self.debug is True:
             #     print(f'x: {x_pos} y: {y_pos} i: {i}')

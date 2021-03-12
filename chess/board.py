@@ -23,6 +23,7 @@ class Board:
         self.size = size
         self.state = self.get_state_from_fen(fen)
         print(self)
+    
 
     def get_state_from_fen(self, fen):
         """Given a fen it will return the board state.
@@ -47,7 +48,7 @@ class Board:
         for ch in fen:
             # Skip that many tiles.
             if ch in "12345678":
-                pos += int(ch)  # -1 because we count from 0
+                pos += int(ch)
                 continue
 
             # Find the color of the piece.
@@ -78,7 +79,6 @@ class Board:
 
             # Occupy the pos.
             state[pos] = piece_code
-            # print(f"[{pos}] = {piece_code}")
             pos += 1
 
         return state

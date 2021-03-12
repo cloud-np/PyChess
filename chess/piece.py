@@ -73,6 +73,54 @@ class Piece:
         """        
         return (Piece.get_colour(piece_code), Piece.get_type(piece_code))
 
+    @staticmethod
+    def get_img_for_piece(piece_code, imgs_path):
+        """Find the correct img for a piece.
+
+        Parameters
+        ----------
+        piece_code : uint8
+            A way we represent our pieces.
+
+        Returns
+        -------
+        str
+            The path of the piece img.
+        """
+        path = f"{imgs_path}/"
+
+        colour, type = Piece.get_colour_and_type(piece_code)
+
+        if colour == Piece.WHITE:
+            path += 'w'
+        elif colour == Piece.BLACK:
+            path += 'b'
+
+        if type == Piece.KING:
+            path += 'k'
+        elif type == Piece.PAWN:
+            path += 'p'
+        elif type == Piece.KNIGHT:
+            path += 'n'
+        elif type == Piece.BISHOP:
+            path += 'b'
+        elif type == Piece.ROOK:
+            path += 'r'
+        elif type == Piece.QUEEN:
+            path += 'q'
+
+        return f"{path}.png"
+    
+    @staticmethod
+    def is_our_teams_turn(piece_code, is_white_turn):
+        piece_colour = Piece.get_colour(piece_code)
+        if piece_colour == Piece.WHITE and is_white_turn:
+            return True
+        elif piece_colour == Piece.BLACK and not is_white_turn:
+            return True
+        return False
+
+    @staticmethod
     def find_symbol(piece_code):
         """Find the correct symbol for a piece.
 
