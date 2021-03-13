@@ -2,9 +2,7 @@
 from uuid import uuid4
 
 from chess.piece import Piece
-from pygame.constants import QUIT
 from chess.board import Board
-import pygame
 from datetime import datetime
 from chess.frontend.visuals import GameVisuals
 
@@ -51,7 +49,9 @@ class Game:
             If the piece is on the same colour as the player 
             who is turn to play then the pick is pickable.
         """
-        if not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
+        if Piece.get_type(piece_code) == Piece.EMPTY:
+            return False
+        elif not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
             return False
         return True
 
