@@ -13,8 +13,9 @@ class EventType:
     STOP = 1
     START = 2
     SHOW_INDEX = 3
-    MOUSE_BUTTONDOWN = 4
-    MOUSE_BUTTONUP = 5
+    SHOW_IMGS = 4
+    MOUSE_BUTTONDOWN = 5
+    MOUSE_BUTTONUP = 6 
 
 
 class Background(py_g.sprite.Sprite):
@@ -87,9 +88,12 @@ class GameVisuals:
         """
         self.game = game
         self.show_indexes = False
+        self.show_imgs = False
+        self.is_running = False
+        self.is_piece_picked = False
         self.clock = py_g.time.Clock()
         self.screen = py_g.display.set_mode((800, 800))
-        self.drag_piece = {"img": None, "index": None}
+        self.picked_piece = {"img": None, "index": None}
         self.background = Background(f"{IMGS_PATH}/board.png", [0, 0])
         self.tiles = [Tile(i) for i in range(board_size)]
 
@@ -110,7 +114,7 @@ class GameVisuals:
         index : int
             Index of the tile that had the piece.
         """        
-        self.drag_piece = {"img": self.tiles[index].piece_img, "index": index}
+        self.picked_piece = {"img": self.tiles[index].piece_img, "index": index}
 
     def draw_bg(self):
         """Keep background-img on the screen refreshed."""
@@ -123,11 +127,17 @@ class GameVisuals:
             tile.text_surface = self.font.render(f"{tile.index}", False, (0, 0, 0))
             self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
-    def draw_drag_piece(self, m_pos):
+    def draw_imgs(self):
+        """Show the index number of the tile on screen."""        
+        for tile in self.tiles:
+            tile.text_surface = self.font.render(f"{'IMG' if tile.piece_img is not None else ''}", False, (0, 0, 0))
+            self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
+
+    def draw_picked_piece(self, m_pos):
         """Show the picked piece."""
-        if self.drag_piece["img"] is None:
+        if self.picked_piece["img"] is None:
             raise Exception("You can't pick an empty tile.")
-        self.screen.blit(self.drag_piece["img"], (m_pos[0] - 50, m_pos[1] - 50))
+        self.screen.blit(self.picked_piece["img"], (m_pos[0] - 50, m_pos[1] - 50))
 
     def draw_played_move(self):
         """Change the colour of the squares of the move that got played."""        
@@ -150,12 +160,11 @@ class GameVisuals:
     def main_loop(self):
         """Major visual loop of the program."""
         # Game Loop
-        is_running = True
-        is_piece_picked = False
         # rect_img = clicked_rect = None
         # player_turn = 0
+        self.is_running = True
 
-        while is_running:
+        while self.is_running:
             # Keep tracking the position of the mouse
             mx, my = py_g.mouse.get_pos()
 
@@ -169,21 +178,24 @@ class GameVisuals:
             self.draw_pieces()
 
             # Look for the game_events
-            event_code = self.check_for_events()
+            event_code = GameVisuals.check_for_events()
             if event_code == EventType.QUIT:
-                is_running = False
+                self.is_running = False
             elif event_code == EventType.SHOW_INDEX:
                 self.show_indexes = not self.show_indexes
+            elif event_code == EventType.SHOW_IMGS:
+                self.show_imgs = not self.show_imgs
             elif event_code == EventType.MOUSE_BUTTONDOWN:
-                is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
-            elif event_code == EventType.MOUSE_BUTTONUP:
-                _, index = self.tile_clicked(m_pos=(mx, my))
-                self.swap_dragged_piece(index)
-                self.change_cursor("arrow")
-                is_piece_picked = False
+                self.is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
+            elif self.is_piece_picked and event_code == EventType.MOUSE_BUTTONUP:
+                # If trying placing the piece was successfull the piece is not longer picked up.
+                self.is_piece_picked = not self.try_place_piece(m_pos=(mx, my))
             
-            if is_piece_picked:
-                self.draw_drag_piece(m_pos=(mx, my))
+            if self.is_piece_picked:
+                self.draw_picked_piece(m_pos=(mx, my))
+
+            if self.show_imgs:
+                self.draw_imgs()
 
             if self.show_indexes:
                 self.draw_indexes()
@@ -196,12 +208,27 @@ class GameVisuals:
 
             pass  # While loop
     
-    def swap_dragged_piece(self, index):
+    def try_place_piece(self, m_pos):
+        _, index = self.tile_clicked(m_pos)
+        if self.game.is_move_valid(self.picked_piece["index"], index):
+            self.swap_picked_piece(index)
+            self.game.register_move()
+            self.change_cursor("arrow")
+            return True
+        return False
+
+    def swap_picked_piece(self, index):
         new_tile = self.tiles[index]
-        old_tile = self.tiles[self.drag_piece["index"]]
-        new_tile.piece_img = self.drag_piece["img"] 
+        old_tile = self.tiles[self.picked_piece["index"]]
+        new_tile.piece_img = self.picked_piece["img"] 
         old_tile.piece_img = None
+        self.picked_piece = {"img": None, "index": None}
     
+    def place_picked_piece_back(self):
+        self.tiles[self.picked_piece["index"]].piece_img = self.picked_piece["img"].piece_img
+        self.picked_piece = {"img": None, "index": None}
+    
+
     def try_pick_piece(self, m_pos):
         """Try picking up the a piece from a clicked tile.
 
@@ -216,12 +243,26 @@ class GameVisuals:
            Whether or not the picking action was successfull. 
         """        
         piece_code, index = self.tile_clicked(m_pos=m_pos)
-        if self.game.is_piece_pickable(piece_code):
+
+        # Do not pick if: 
+        # 1) Is the same tile
+        # 2) The tile is empty
+        # 3) It's not your turn to play.
+        # FIXME Keep track of the old tile's indexi.
+        print(f"old-index: {self.picked_piece['index']} new-index: {index}")
+        if self.picked_piece["index"] != index \
+            and self.tiles[index].piece_img is not None \
+            and self.game.is_piece_pickable(piece_code):
+
             self.change_cursor("diamond")
             self.set_dragging_piece(index) 
+            print("PICKABLE.")
             self.tiles[index].piece_img = None
-            # self.drag_piece(index)
             return True
+        else:
+            print("NOPE!")
+            if self.picked_piece["img"] is not None:
+                self.place_picked_piece_back()
 
         return False 
 
@@ -289,6 +330,8 @@ class GameVisuals:
             elif event.type == py_g.KEYDOWN:
                 if event.key == py_g.K_d:
                     return EventType.SHOW_INDEX
+                if event.key == py_g.K_i:
+                    return EventType.SHOW_IMGS
 
                 #     pick_piece(mouse_x, mouse_y)
             # elif P2_COMPUTER and history['player'] % 2 != 0:

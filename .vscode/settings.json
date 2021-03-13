@@ -2,6 +2,5 @@
   "code-runner.executorMap": {
     "python": "$pythonPath -u main.py",
   },
-  "autoDocstring.docstringFormat": "numpy",
-  "python.pythonPath": "c:\\Users\\nick9\\Desktop\\Programming\\PyChess\\pychess_env_windows\\Scripts\\python.exe"
+  "autoDocstring.docstringFormat": "numpy"
 }

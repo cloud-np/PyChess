@@ -22,6 +22,7 @@ class Game:
         self.debug = debug
         self.is_white_turn = True
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
+        # self.moves_history:
         self.visuals = GameVisuals(self, BOARD_SIZE, self.board.state)
 
 
@@ -33,6 +34,13 @@ class Game:
     def start(self):
         """Run basic setup functions."""
         self.visuals.main_loop()
+    
+    # For now just return true
+    def is_move_valid(self, start_tile, end_tile):
+        return True
+
+    def register_move(self):
+        self.is_white_turn = not self.is_white_turn
 
 
     def is_piece_pickable(self, piece_code):
@@ -49,9 +57,7 @@ class Game:
             If the piece is on the same colour as the player 
             who is turn to play then the pick is pickable.
         """
-        if Piece.get_type(piece_code) == Piece.EMPTY:
-            return False
-        elif not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
+        if not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
             return False
         return True
 
