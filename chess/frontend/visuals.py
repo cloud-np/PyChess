@@ -184,11 +184,9 @@ class GameVisuals:
                 self.show_imgs = not self.show_imgs
             elif event_code == EventType.MOUSE_BUTTONDOWN:
                 self.is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
-                print(f"m_down picked-piece: {self.picked_piece}")
             elif self.is_piece_picked and event_code == EventType.MOUSE_BUTTONUP:
                 # If trying placing the piece was successfull the piece is not longer picked up.
                 self.is_piece_picked = not self.try_place_piece(m_pos=(mx, my))
-                print(f"m_up picked-piece: {self.picked_piece}")
             
             if self.is_piece_picked:
                 self.draw_picked_piece(m_pos=(mx, my))
@@ -206,13 +204,15 @@ class GameVisuals:
     def try_place_piece(self, m_pos) -> bool:
         _, index = self.tile_clicked(m_pos)
 
+        # If this happens place the piece back.
         if self.picked_piece["index"] == index:
-            return False
+            if self.picked_piece['img'] is not None:
+                self.place_picked_piece_back()
+            return True
         elif self.game.is_move_valid(self.picked_piece["index"], index):
             self.swap_picked_piece(index)
             self.game.register_move()
             self.change_cursor("arrow")
-            print("Made a move!")
             return True
         return False
 
