@@ -202,6 +202,18 @@ class GameVisuals:
             pass  # While loop
     
     def try_place_piece(self, m_pos) -> bool:
+        """Try place the picked piece either back to its original tile or at the specific tile the player clicked.
+
+        Parameters
+        ----------
+        m_pos : tuple(int, int)
+            The pos of the mouse on the screen.
+
+        Returns
+        -------
+        bool
+            Where or not it was able to place the picked piece.
+        """        
         _, index = self.tile_clicked(m_pos)
 
         # If this happens place the piece back.
@@ -217,6 +229,13 @@ class GameVisuals:
         return False
 
     def swap_picked_piece(self, index) -> None:
+        """Swap the picked piece with the tile selected.
+
+        Parameters
+        ----------
+        index : int
+            The index of the new tile.
+        """        
         new_tile = self.tiles[index]
         old_tile = self.tiles[self.picked_piece["index"]]
         new_tile.piece_img = self.picked_piece["img"] 
@@ -224,6 +243,7 @@ class GameVisuals:
         self.picked_piece = {"img": None, "index": None}
     
     def place_picked_piece_back(self) -> None:
+        """Place the picked piece back to its original tile."""        
         self.tiles[self.picked_piece["index"]].piece_img = self.picked_piece["img"]
         self.picked_piece = {"img": None, "index": None}
         self.change_cursor("arrow")
@@ -244,10 +264,6 @@ class GameVisuals:
         """        
         piece_code, index = self.tile_clicked(m_pos=m_pos)
 
-        # Do not pick if: 
-        # 1) Is the same tile
-        # 2) The tile is empty
-        # 3) It's not your turn to play.
         if self.picked_piece["index"] == index:
             return True
         elif self.tiles[index].piece_img is not None:
