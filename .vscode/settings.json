@@ -2,5 +2,7 @@
   "code-runner.executorMap": {
     "python": "$pythonPath -u main.py",
   },
-  "autoDocstring.docstringFormat": "numpy"
+  "code-runner.ignoreSelection": true,
+  "autoDocstring.docstringFormat": "numpy",
+  "python.pythonPath": "pychess_env_windows\\Scripts\\python.exe"
 }

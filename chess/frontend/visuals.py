@@ -106,7 +106,7 @@ class GameVisuals:
 
         self.occupie_tiles(board_state)
 
-    def set_dragging_piece(self, index):
+    def set_picked_piece(self, index):
         """Set the piece that is getting dragged.
 
         Parameters
@@ -171,9 +171,6 @@ class GameVisuals:
             # Keep showing the bg
             self.draw_bg()
 
-            # if history['moved_made']:
-            #     self.draw_player_move(history)
-
             # Keep pieces-img on the screen refreshed
             self.draw_pieces()
 
@@ -187,9 +184,11 @@ class GameVisuals:
                 self.show_imgs = not self.show_imgs
             elif event_code == EventType.MOUSE_BUTTONDOWN:
                 self.is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
+                print(f"m_down picked-piece: {self.picked_piece}")
             elif self.is_piece_picked and event_code == EventType.MOUSE_BUTTONUP:
                 # If trying placing the piece was successfull the piece is not longer picked up.
                 self.is_piece_picked = not self.try_place_piece(m_pos=(mx, my))
+                print(f"m_up picked-piece: {self.picked_piece}")
             
             if self.is_piece_picked:
                 self.draw_picked_piece(m_pos=(mx, my))
@@ -199,34 +198,35 @@ class GameVisuals:
 
             if self.show_indexes:
                 self.draw_indexes()
-            # If the player has a piece picked
-            # if history['drag_flag']:
-            #     self.screen.blit(history['dragged_piece'].image, (mouse_x - 50, mouse_y - 50))
 
             # Update everything on the screen
             py_g.display.update()
-
             pass  # While loop
     
-    def try_place_piece(self, m_pos):
+    def try_place_piece(self, m_pos) -> bool:
         _, index = self.tile_clicked(m_pos)
-        if self.game.is_move_valid(self.picked_piece["index"], index):
+
+        if self.picked_piece["index"] == index:
+            return False
+        elif self.game.is_move_valid(self.picked_piece["index"], index):
             self.swap_picked_piece(index)
             self.game.register_move()
             self.change_cursor("arrow")
+            print("Made a move!")
             return True
         return False
 
-    def swap_picked_piece(self, index):
+    def swap_picked_piece(self, index) -> None:
         new_tile = self.tiles[index]
         old_tile = self.tiles[self.picked_piece["index"]]
         new_tile.piece_img = self.picked_piece["img"] 
         old_tile.piece_img = None
         self.picked_piece = {"img": None, "index": None}
     
-    def place_picked_piece_back(self):
-        self.tiles[self.picked_piece["index"]].piece_img = self.picked_piece["img"].piece_img
+    def place_picked_piece_back(self) -> None:
+        self.tiles[self.picked_piece["index"]].piece_img = self.picked_piece["img"]
         self.picked_piece = {"img": None, "index": None}
+        self.change_cursor("arrow")
     
 
     def try_pick_piece(self, m_pos):
@@ -248,21 +248,17 @@ class GameVisuals:
         # 1) Is the same tile
         # 2) The tile is empty
         # 3) It's not your turn to play.
-        # FIXME Keep track of the old tile's indexi.
-        print(f"old-index: {self.picked_piece['index']} new-index: {index}")
-        if self.picked_piece["index"] != index \
-            and self.tiles[index].piece_img is not None \
-            and self.game.is_piece_pickable(piece_code):
+        if self.picked_piece["index"] == index:
+            return True
+        elif self.tiles[index].piece_img is not None:
+            # and self.game.is_piece_pickable(piece_code):
 
             self.change_cursor("diamond")
-            self.set_dragging_piece(index) 
-            print("PICKABLE.")
+            self.set_picked_piece(index) 
             self.tiles[index].piece_img = None
             return True
-        else:
-            print("NOPE!")
-            if self.picked_piece["img"] is not None:
-                self.place_picked_piece_back()
+        elif self.picked_piece['img'] is not None:
+            self.place_picked_piece_back()
 
         return False 
 
