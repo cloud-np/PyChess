@@ -121,25 +121,25 @@ class GameVisuals:
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background.image, self.background.rect)
     
-    def draw_indexes(self):
+    def draw_indexes(self) -> None:
         """Show the index number of the tile on screen."""        
         for tile in self.tiles:
             tile.text_surface = self.font.render(f"{tile.index}", False, (0, 0, 0))
             self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
-    def draw_imgs(self):
+    def draw_imgs(self) -> None:
         """Show the index number of the tile on screen."""        
         for tile in self.tiles:
             tile.text_surface = self.font.render(f"{'IMG' if tile.piece_img is not None else ''}", False, (0, 0, 0))
             self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
-    def draw_picked_piece(self, m_pos):
+    def draw_picked_piece(self, m_pos) -> None:
         """Show the picked piece."""
         if self.picked_piece["img"] is None:
             raise Exception("You can't pick an empty tile.")
         self.screen.blit(self.picked_piece["img"], (m_pos[0] - 50, m_pos[1] - 50))
 
-    def draw_played_move(self):
+    def draw_played_move(self) -> None:
         """Change the colour of the squares of the move that got played."""        
         rect = [[], []]
         for i, tile in enumerate(self.tiles):
@@ -157,7 +157,7 @@ class GameVisuals:
         py_g.draw.rect(self.screen, rect[0][4], (rect[0][0], rect[0][1], rect[0][2], rect[0][3]))
         py_g.draw.rect(self.screen, rect[1][4], (rect[1][0], rect[1][1], rect[1][2], rect[1][3]))
     
-    def main_loop(self):
+    def main_loop(self) -> None:
         """Major visual loop of the program."""
         # Game Loop
         # rect_img = clicked_rect = None

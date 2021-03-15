@@ -64,7 +64,7 @@ class Piece:
         Parameters
         ----------
         piece_code : uint8
-            A binary way to represent our pieces
+            A binary way to represent our pieces.
 
         Returns
         -------
@@ -113,6 +113,20 @@ class Piece:
     
     @staticmethod
     def is_our_teams_turn(piece_code, is_white_turn):
+        """Return true if given a piece its his team turn.
+
+        Parameters
+        ----------
+        piece_code : uint8
+            A binary way to represent our pieces.
+        is_white_turn : bool
+            Whether or not is white turns to play.
+
+        Returns
+        -------
+        bool
+            Show if its the given's piece team turn to play.
+        """        
         piece_colour = Piece.get_colour(piece_code)
         if piece_colour == Piece.WHITE and is_white_turn:
             return True
@@ -140,17 +154,17 @@ class Piece:
         if type == Piece.EMPTY:
             return ' '
         if type == Piece.KING:
-            symbol += 'k'
+            symbol = 'k'
         elif type == Piece.PAWN:
-            symbol += 'p'
+            symbol = 'p'
         elif type == Piece.KNIGHT:
-            symbol += 'n'
+            symbol = 'n'
         elif type == Piece.BISHOP:
-            symbol += 'b'
+            symbol = 'b'
         elif type == Piece.ROOK:
-            symbol += 'r'
+            symbol = 'r'
         elif type == Piece.QUEEN:
-            symbol += 'q'
+            symbol = 'q'
         
         if colour == Piece.WHITE:
             return symbol.upper()

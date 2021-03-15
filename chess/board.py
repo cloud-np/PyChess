@@ -82,6 +82,65 @@ class Board:
             pos += 1
 
         return state
+    
+    def find_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+        colour, type = Piece.get_colour_and_type(piece_code)
+
+        if row != -1:
+            inv_row = (8 - row) * 8
+            for i, pc in enumerate(self.state[inv_row:inv_row + 8]):
+                if (Piece.get_colour_and_type(pc)) == (colour, type):
+                    return i
+        elif col != '':
+            offset = Board.get_offset_for_col(col)
+            for i, pc in enumerate(self.state[::8 + offset]):
+                if (Piece.get_colour_and_type(pc)) == (colour, type):
+                    return i
+        else:
+            raise ValueError(f"Can't find piece. row: {row} col: {col}")
+                
+    
+
+    @staticmethod
+    def get_offset_for_col(col):
+        if col == 'a':
+            return 0
+        elif col == 'b':
+            return 1
+        elif col == 'c':
+            return 2 
+        elif col == 'd':
+            return 3 
+        elif col == 'e':
+            return 4 
+        elif col == 'f':
+            return 5 
+        elif col == 'g':
+            return 6 
+        elif col == 'h':
+            return 7
+        else:
+            raise ValueError(f"Wrong value for collumn: {col}")
+
+    @staticmethod
+    def get_offset_for_col(col) -> int:
+        if col == 'a':
+            return 0
+        if col == 'b':
+            return 1
+        elif col == 'c':
+            return 2 
+        elif col == 'd':
+            return 3 
+        elif col == 'e':
+            return 4 
+        elif col == 'f':
+            return 5 
+        elif col == 'g':
+            return 6 
+        elif col == 'h':
+            return 7
+
 
     def __str__(self):
         """Print the board state."""        

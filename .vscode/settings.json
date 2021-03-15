@@ -3,6 +3,5 @@
     "python": "$pythonPath -u main.py",
   },
   "code-runner.ignoreSelection": true,
-  "autoDocstring.docstringFormat": "numpy",
-  "python.pythonPath": "pychess_env_windows\\Scripts\\python.exe"
+  "autoDocstring.docstringFormat": "numpy"
 }
