@@ -22,8 +22,24 @@ class Board:
         self.fen: str = fen
         self.size = size
         self.state = self.get_state_from_fen(fen)
+        self.w_pieces = self.get_pieces(whites=True)
+        self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook = self.w_pieces.values()
+        self.b_pieces = self.get_pieces(whites=False)
+        self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook = self.b_pieces.values()
         print(self)
-    
+
+    def get_pieces(self, whites):
+        colour = Piece.WHITE if whites else Piece.BLACK
+        pieces = {Piece.KING | colour: list(),
+                  Piece.PAWN | colour: list(),
+                  Piece.BISHOP | colour: list(),
+                  Piece.KNIGHT | colour: list(),
+                  Piece.ROOK | colour: list(),
+                  Piece.QUEEN | colour: list()}
+
+        for i, pc in enumerate(self.state):
+            if pc != Piece.EMPTY:
+                pieces[pc].append(i)
 
     def get_state_from_fen(self, fen):
         """Given a fen it will return the board state.
@@ -42,7 +58,7 @@ class Board:
         ------
         ValueError
             In case there is a wrong symbol in the fen.
-        """        
+        """
         state = np.zeros((self.size), dtype="uint8")
         pos = 0
         for ch in fen:
@@ -82,7 +98,26 @@ class Board:
             pos += 1
 
         return state
-    
+
+    def get_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+        colour, type = Piece.get_colour_and_type(piece_code)
+
+        if row != -1:
+            row = (8 - row) * 8
+        elif col != '':
+            col = Board.get_number_for_col(col)
+        
+        pieces = self.w_pieces if colour == Piece.WHITE else self.b_pieces
+
+        for index in pieces[piece_code]:
+            # Des ama to index einai ths idias sthlhs h shras 
+            # me to row/col pou exeis
+            if (index / ):
+                pass 
+
+
+
+
     def find_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
         colour, type = Piece.get_colour_and_type(piece_code)
 
@@ -96,11 +131,13 @@ class Board:
             for i, pc in enumerate(self.state[::8 + offset]):
                 if (Piece.get_colour_and_type(pc)) == (colour, type):
                     return (i * 8) + offset
-        
+
         for i, pc in enumerate(self.state):
             if (Piece.get_colour_and_type(pc)) == (colour, type):
                 return i
-                
+
+        return -1
+
     @staticmethod
     def find_tile_from_str(row: str, col: str):
         col = Board.get_number_for_col(col)
@@ -114,15 +151,15 @@ class Board:
         elif col == 'b':
             return 1
         elif col == 'c':
-            return 2 
+            return 2
         elif col == 'd':
-            return 3 
+            return 3
         elif col == 'e':
-            return 4 
+            return 4
         elif col == 'f':
-            return 5 
+            return 5
         elif col == 'g':
-            return 6 
+            return 6
         elif col == 'h':
             return 7
         else:
@@ -135,21 +172,20 @@ class Board:
         if col == 'b':
             return 1
         elif col == 'c':
-            return 2 
+            return 2
         elif col == 'd':
-            return 3 
+            return 3
         elif col == 'e':
-            return 4 
+            return 4
         elif col == 'f':
-            return 5 
+            return 5
         elif col == 'g':
-            return 6 
+            return 6
         elif col == 'h':
             return 7
 
-
     def __str__(self):
-        """Print the board state."""        
+        """Print the board state."""
         x = 0
         print('\t\t\t\t     BOARD')
         print('      0     1     2     3     4     5     6     7')
@@ -160,5 +196,5 @@ class Board:
                 print()
                 print(x, end='   ')
             print(f'[ {Piece.find_symbol_for_piece(piece_code)} ]', end=' ')
-            # print(f'[ {piece_code} ]', end=' ')
-        return ''
+        return ' '
+

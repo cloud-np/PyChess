@@ -1,7 +1,7 @@
 from chess.piece import Piece
 
 
-def WRONG_INPUT(u_input): return ValueError(f"Wrong move input: {u_input}")
+def WRONG_INPUT(u_input, msg="Wrong move input:"): return ValueError(f"{msg} {u_input}")
 
 
 PIECE_SYMBOLS = "rnbqk"
@@ -39,6 +39,16 @@ class Move:
                f"piece_code: {self.piece_code}\n" + \
                f"move_code: {self.move_code}\n"
 
+    #TODO write this a bit cleaner.
+    def is_symbol_turn(move_str, is_white_turn):
+        if (move_str[0] not in TILE_NAMES) and \
+           ((move_str[0].isupper() and not is_white_turn) 
+           or (move_str[0].islower() and is_white_turn)):
+            raise WRONG_INPUT(move_str, msg="Wrong piece team entered.")
+        return True
+
+
+    # TODO A regex way should be way more readable but this works for now.
     @staticmethod
     def decode_to_move(move_str, board, is_white_turn):
         # Because of the case for e.g: "exf4"
@@ -49,39 +59,47 @@ class Move:
         end_tile = -1
 
         # Find colour
-        if (move_str[0] not in TILE_NAMES) and \
-           ((move_str[0].isupper() and not is_white_turn) or (move_str[0].islower() and is_white_turn)):
-            raise WRONG_INPUT(move_str)
-        else:
+        if Move.is_symbol_turn(move_str, is_white_turn) is True:
             piece_code |= Piece.WHITE if move_str[0].isupper() else Piece.BLACK
 
         # Find piece type
         if move_str[0].lower() in PIECE_SYMBOLS:
             piece_code |= Piece.find_piece_from_symbol(move_str[0].lower())
-            if move_str[1] in TILE_NAMES:
-                start_tile = board.find_tile_from_piece(piece_code, col=move_str[1])
-            else:
-                start_tile = board.find_tile_from_piece(piece_code)
 
-        elif move_str[0] in TILE_NAMES:
+        col = ''
+        if move_str[1] in TILE_NAMES:
+            col = move_str[1]
+        if (piece_code & Piece.TYPE_MASK) == Piece.EMPTY:
             piece_code |= Piece.PAWN
+        start_tile = board.get_tile_from_piece(piece_code, col=col)
+
 
         for i, ch in enumerate(move_str[1:]):
-            if ch == 'x':
-                move_code = Move.has_action_repeated(move_code, MoveTypes.TAKES)
-            elif ch == '+':
-                move_code = Move.has_action_repeated(move_code, MoveTypes.CHECK)
-            elif ch == '#':
-                move_code = Move.has_action_repeated(move_code, MoveTypes.CHECKMATE)
-            elif ch in TILE_NUMBERS:
-                end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-            # We can have a piece symbol only in the very first pos.
-            elif ch not in (TILE_NUMBERS + TILE_NAMES):
-                raise WRONG_INPUT(move_str)
+            move_code, is_action = Move.check_symbol_for_action(move_code, ch)
+            if is_action is False:
+                if ch in TILE_NUMBERS:
+                    if start_tile == -1:
+                        start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+                    end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+                # We can have a piece symbol only in the very first pos.
+                elif ch not in (TILE_NUMBERS + TILE_NAMES):
+                    raise WRONG_INPUT(move_str)
+        
 
         return Move(piece_code, start_tile, end_tile, move_code, move_str)
 
-    def has_action_repeated(move_code, move_action) -> int:
+    @staticmethod
+    def check_symbol_for_action(move_code, ch):
+        if ch == 'x':
+            return Move.add_action(move_code, MoveTypes.TAKES), True
+        elif ch == '+':
+            return Move.add_action(move_code, MoveTypes.CHECK), True
+        elif ch == '#':
+            return Move.add_action(move_code, MoveTypes.CHECKMATE), True
+        return move_code, False
+
+
+    def add_action(move_code, move_action) -> int:
         """Check if move action has been repeated.
 
         Parameters
