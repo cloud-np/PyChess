@@ -90,19 +90,25 @@ class Board:
             inv_row = (8 - row) * 8
             for i, pc in enumerate(self.state[inv_row:inv_row + 8]):
                 if (Piece.get_colour_and_type(pc)) == (colour, type):
-                    return i
+                    return inv_row + i
         elif col != '':
-            offset = Board.get_offset_for_col(col)
+            offset = Board.get_number_for_col(col)
             for i, pc in enumerate(self.state[::8 + offset]):
                 if (Piece.get_colour_and_type(pc)) == (colour, type):
-                    return i
-        else:
-            raise ValueError(f"Can't find piece. row: {row} col: {col}")
+                    return (i * 8) + offset
+        
+        for i, pc in enumerate(self.state):
+            if (Piece.get_colour_and_type(pc)) == (colour, type):
+                return i
                 
-    
+    @staticmethod
+    def find_tile_from_str(row: str, col: str):
+        col = Board.get_number_for_col(col)
+        row = (8 - int(row))
+        return (row * 8) + col
 
     @staticmethod
-    def get_offset_for_col(col):
+    def get_number_for_col(col):
         if col == 'a':
             return 0
         elif col == 'b':
@@ -123,7 +129,7 @@ class Board:
             raise ValueError(f"Wrong value for collumn: {col}")
 
     @staticmethod
-    def get_offset_for_col(col) -> int:
+    def get_number_for_col(col) -> int:
         if col == 'a':
             return 0
         if col == 'b':
@@ -153,6 +159,6 @@ class Board:
                 x += 1
                 print()
                 print(x, end='   ')
-            print(f'[ {Piece.find_symbol(piece_code)} ]', end=' ')
+            print(f'[ {Piece.find_symbol_for_piece(piece_code)} ]', end=' ')
             # print(f'[ {piece_code} ]', end=' ')
         return ''

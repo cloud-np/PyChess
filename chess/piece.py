@@ -135,7 +135,24 @@ class Piece:
         return False
 
     @staticmethod
-    def find_symbol(piece_code):
+    def find_piece_from_symbol(symbol: str) -> int:
+        if symbol == 'k':
+            return Piece.KING
+        elif symbol == 'p':
+            return Piece.PAWN
+        elif symbol == 'n':
+            return Piece.KNIGHT
+        elif symbol == 'b':
+            return Piece.BISHOP
+        elif symbol == 'r':
+            return Piece.ROOK
+        elif symbol == 'q':
+            return Piece.QUEEN
+        else:
+            raise ValueError(f"Wrong symbol input to find a piece: {symbol}")
+
+    @staticmethod
+    def find_symbol_for_piece(piece_code: int):
         """Find the correct symbol for a piece.
 
         Parameters

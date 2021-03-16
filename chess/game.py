@@ -15,7 +15,7 @@ BOARD_SIZE = 64
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug=False, player1="PC", player2="PC"):
+    def __init__(self, debug=False, player1="PC", player2="PC", no_visuals=False):
         """Construct."""
         self.id: uuid4 = uuid4()
         self.time_created = datetime.now()
@@ -23,7 +23,9 @@ class Game:
         self.is_white_turn = True
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
         # self.moves_history:
-        self.visuals = GameVisuals(self, BOARD_SIZE, self.board.state)
+        if not no_visuals:
+            self.visuals = GameVisuals(self, BOARD_SIZE, self.board.state)
+            self.visuals.main_loop()
 
 
     def __str__(self) -> str:
@@ -31,9 +33,6 @@ class Game:
         return f"Created: " \
                f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
 
-    def start(self):
-        """Run basic setup functions."""
-        self.visuals.main_loop()
     
     # For now just return true
     def is_move_valid(self, start_tile, end_tile):
