@@ -9,6 +9,8 @@ TILE_NUMBERS = "12345678"
 TILE_NAMES = "abcdefgh"
 
 class MoveTypes:
+    """A binary way to represent moves and move actions."""    
+
     NORMAL = 0
     TAKES = 1
     CHECK = 2
@@ -25,8 +27,24 @@ class MoveTypes:
 
 
 class Move:
+    """Holds info about the move made."""    
 
     def __init__(self, piece_code, start_tile, end_tile, move_code, read_form):
+        """Components that indentify a move.
+
+        Parameters
+        ----------
+        piece_code : unit8
+            A binary way to represent our pieces.
+        start_tile : int
+            The starting pos of the piece.
+        end_tile : int
+            The ending pos of the piece.
+        move_code : uint8
+            A binary way to represent our move types.
+        read_form : str 
+            Our move in string readable way.
+        """        
         self.piece_code = piece_code
         self.start_tile = start_tile
         self.end_tile = end_tile
@@ -41,6 +59,25 @@ class Move:
 
     #TODO write this a bit cleaner.
     def is_symbol_turn(move_str, is_white_turn):
+        """Given the first symbol show if the given piece is correct.
+
+        Parameters
+        ----------
+        move_str : str
+            The user input
+        is_white_turn : bool
+            Shows which teams turn is to play.
+
+        Returns
+        -------
+        bool
+            Return if the first symbol input is correct.
+
+        Raises
+        ------
+        WRONG_INPUT
+            If its wrong character or its not this teams turn to play.
+        """        
         if (move_str[0] not in TILE_NAMES) and \
            ((move_str[0].isupper() and not is_white_turn) 
            or (move_str[0].islower() and is_white_turn)):

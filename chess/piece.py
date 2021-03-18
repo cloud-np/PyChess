@@ -18,6 +18,16 @@ class Piece:
     TYPE_MASK = 0b00111
     COLOUR_MASK = 0b11000
 
+    @staticmethod
+    def move_sets():
+        return {Piece.KING: Piece.king_moveset,
+                    Piece.PAWN: Piece.pawn_moveset,
+                    Piece.BISHOP: Piece.bishop_moveset,
+                    Piece.KNIGHT: Piece.knight_moveset,
+                    Piece.ROOK: Piece.rook_moveset,
+                    Piece.QUEEN: Piece.queen_moveset,
+                    Piece.PAWN: Piece.pawn_moveset}
+
     # def __init__(self, piece_code):
     #     if piece_code <= 0:
     #         raise ValueError(f"Invalid piece_code: {piece_code}")

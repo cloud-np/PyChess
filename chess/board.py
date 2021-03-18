@@ -25,6 +25,7 @@ class Board:
         self.w_pieces = self.get_pieces(whites=True)
         self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
         self.b_pieces = self.get_pieces(whites=False)
+        self.pieces_movesets = Piece.move_sets()
         self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
         print(self)
 
