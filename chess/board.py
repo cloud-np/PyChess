@@ -23,9 +23,9 @@ class Board:
         self.size = size
         self.state = self.get_state_from_fen(fen)
         self.w_pieces = self.get_pieces(whites=True)
-        self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook = self.w_pieces.values()
+        self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
         self.b_pieces = self.get_pieces(whites=False)
-        self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook = self.b_pieces.values()
+        self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
         print(self)
 
     def get_pieces(self, whites):
@@ -38,8 +38,9 @@ class Board:
                   Piece.QUEEN | colour: list()}
 
         for i, pc in enumerate(self.state):
-            if pc != Piece.EMPTY:
+            if pc != Piece.EMPTY and Piece.get_colour(pc) == colour:
                 pieces[pc].append(i)
+        return pieces
 
     def get_state_from_fen(self, fen):
         """Given a fen it will return the board state.
@@ -100,10 +101,10 @@ class Board:
         return state
 
     def get_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
-        colour, type = Piece.get_colour_and_type(piece_code)
+        colour = Piece.get_colour(piece_code)
 
         if row != -1:
-            row = (8 - row) * 8
+            inv_row = (8 - row) * 8
         elif col != '':
             col = Board.get_number_for_col(col)
         
@@ -112,8 +113,12 @@ class Board:
         for index in pieces[piece_code]:
             # Des ama to index einai ths idias sthlhs h shras 
             # me to row/col pou exeis
-            if (index / ):
-                pass 
+            c = index % 8
+            r = index - c  
+            if c == col:
+                return index
+            elif r != -1:
+                return index
 
 
 

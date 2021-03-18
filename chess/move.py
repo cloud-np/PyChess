@@ -60,18 +60,16 @@ class Move:
 
         # Find colour
         if Move.is_symbol_turn(move_str, is_white_turn) is True:
-            piece_code |= Piece.WHITE if move_str[0].isupper() else Piece.BLACK
+            piece_code |= Piece.WHITE if is_white_turn else Piece.BLACK
 
         # Find piece type
         if move_str[0].lower() in PIECE_SYMBOLS:
             piece_code |= Piece.find_piece_from_symbol(move_str[0].lower())
-
-        col = ''
-        if move_str[1] in TILE_NAMES:
-            col = move_str[1]
-        if (piece_code & Piece.TYPE_MASK) == Piece.EMPTY:
+        else:
             piece_code |= Piece.PAWN
-        start_tile = board.get_tile_from_piece(piece_code, col=col)
+
+        if move_str[1] in TILE_NAMES:
+            start_tile = board.get_tile_from_piece(piece_code, col=move_str[1])
 
 
         for i, ch in enumerate(move_str[1:]):
