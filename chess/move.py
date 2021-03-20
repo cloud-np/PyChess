@@ -1,7 +1,9 @@
 from chess.piece import Piece
 
 
-def WRONG_INPUT(u_input, msg="Wrong move input:"): return ValueError(f"{msg} {u_input}")
+def WRONG_INPUT(u_input, msg="Wrong move input:"): 
+    """Help with readability."""    
+    return ValueError(f"{msg} {u_input}")
 
 
 PIECE_SYMBOLS = "rnbqk"
@@ -9,6 +11,8 @@ TILE_NUMBERS = "12345678"
 TILE_NAMES = "abcdefgh"
 
 class MoveTypes:
+    """A binary way to represent move types."""    
+
     NORMAL = 0
     TAKES = 1
     CHECK = 2
@@ -25,8 +29,24 @@ class MoveTypes:
 
 
 class Move:
+    """Holds crucial info about registered moves."""    
 
     def __init__(self, piece_code, start_tile, end_tile, move_code, read_form):
+        """Construct a move with basic components.
+
+        Parameters
+        ----------
+        piece_code : unit8
+            A binary way to represent our Pieces.
+        start_tile : int
+            The starting tile of the piece right before it moved.
+        end_tile : int
+            The ending tile of the piece right after it moved.
+        move_code : int
+            A binary way to represent our MoveTypes.
+        read_form : str
+            Human readable way to represent the move.
+        """        
         self.piece_code = piece_code
         self.start_tile = start_tile
         self.end_tile = end_tile
@@ -41,6 +61,7 @@ class Move:
 
     #TODO write this a bit cleaner.
     def is_symbol_turn(move_str, is_white_turn):
+        """Return whether or not its the first symbol correct and if its his team turn to play."""        
         if (move_str[0] not in TILE_NAMES) and \
            ((move_str[0].isupper() and not is_white_turn) 
            or (move_str[0].islower() and is_white_turn)):
@@ -51,6 +72,27 @@ class Move:
     # TODO A regex way should be way more readable but this works for now.
     @staticmethod
     def decode_to_move(move_str, board, is_white_turn):
+        """Based on a string that represents the move decode it into a move.
+
+        Parameters
+        ----------
+        move_str : str
+            The str that represents the move.
+        board : np.array(64, dtype="uint8")
+            Holds the positions of all the pieces on board.
+        is_white_turn : bool
+            Shows which teams is turn to play.
+
+        Returns
+        -------
+        Move
+            Return the propossed move.
+
+        Raises
+        ------
+        WRONG_INPUT
+            If the string input is not in correct format return an error.
+        """        
         # Because of the case for e.g: "exf4"
         # we can't be sure if the piece is black or not
         piece_code = Piece.EMPTY
@@ -88,6 +130,7 @@ class Move:
 
     @staticmethod
     def check_symbol_for_action(move_code, ch):
+        """Check if the symbol corrisponds to an action."""        
         if ch == 'x':
             return Move.add_action(move_code, MoveTypes.TAKES), True
         elif ch == '+':

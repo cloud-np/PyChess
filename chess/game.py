@@ -39,6 +39,7 @@ class Game:
         return True
 
     def register_move(self):
+        """Register the valid played move."""        
         self.is_white_turn = not self.is_white_turn
 
 
