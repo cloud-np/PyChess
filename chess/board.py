@@ -105,24 +105,22 @@ class Board:
         colour = Piece.get_colour(piece_code)
 
         if row != -1:
-            inv_row = (8 - row) * 8
+            pass
+            # inv_row = (8 - row) * 8
         elif col != '':
             col = Board.get_number_for_col(col)
-        
+
         pieces = self.w_pieces if colour == Piece.WHITE else self.b_pieces
 
         for index in pieces[piece_code]:
-            # Des ama to index einai ths idias sthlhs h shras 
+            # Des ama to index einai ths idias sthlhs h shras
             # me to row/col pou exeis
             c = index % 8
-            r = index - c  
+            r = index - c
             if c == col:
                 return index
             elif r != -1:
                 return index
-
-
-
 
     def find_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
         colour, type = Piece.get_colour_and_type(piece_code)
@@ -171,25 +169,6 @@ class Board:
         else:
             raise ValueError(f"Wrong value for collumn: {col}")
 
-    @staticmethod
-    def get_number_for_col(col) -> int:
-        if col == 'a':
-            return 0
-        if col == 'b':
-            return 1
-        elif col == 'c':
-            return 2
-        elif col == 'd':
-            return 3
-        elif col == 'e':
-            return 4
-        elif col == 'f':
-            return 5
-        elif col == 'g':
-            return 6
-        elif col == 'h':
-            return 7
-
     def __str__(self):
         """Print the board state."""
         x = 0
@@ -203,4 +182,3 @@ class Board:
                 print(x, end='   ')
             print(f'[ {Piece.find_symbol_for_piece(piece_code)} ]', end=' ')
         return ' '
-

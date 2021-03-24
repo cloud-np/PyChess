@@ -1,15 +1,17 @@
 from chess.piece import Piece
 
 
-def WRONG_INPUT(u_input, msg="Wrong move input:"): return ValueError(f"{msg} {u_input}")
+def WRONG_INPUT(u_input, msg="Wrong move input:"):
+    return ValueError(f"{msg} {u_input}")
 
 
 PIECE_SYMBOLS = "rnbqk"
 TILE_NUMBERS = "12345678"
 TILE_NAMES = "abcdefgh"
 
+
 class MoveTypes:
-    """A binary way to represent moves and move actions."""    
+    """A binary way to represent moves and move actions."""
 
     NORMAL = 0
     TAKES = 1
@@ -27,7 +29,7 @@ class MoveTypes:
 
 
 class Move:
-    """Holds info about the move made."""    
+    """Holds info about the move made."""
 
     def __init__(self, piece_code, start_tile, end_tile, move_code, read_form):
         """Components that indentify a move.
@@ -42,22 +44,22 @@ class Move:
             The ending pos of the piece.
         move_code : uint8
             A binary way to represent our move types.
-        read_form : str 
+        read_form : str
             Our move in string readable way.
-        """        
+        """
         self.piece_code = piece_code
         self.start_tile = start_tile
         self.end_tile = end_tile
         self.move_code = move_code
         self.read_form = read_form
-    
+
     def __str__(self):
         return f"start_tile: {self.start_tile}\n" + \
                f"end_tile: {self.end_tile}\n" + \
                f"piece_code: {self.piece_code}\n" + \
                f"move_code: {self.move_code}\n"
 
-    #TODO write this a bit cleaner.
+    # TODO write this a bit cleaner.
     def is_symbol_turn(move_str, is_white_turn):
         """Given the first symbol show if the given piece is correct.
 
@@ -77,15 +79,14 @@ class Move:
         ------
         WRONG_INPUT
             If its wrong character or its not this teams turn to play.
-        """        
+        """
         if (move_str[0] not in TILE_NAMES) and \
-           ((move_str[0].isupper() and not is_white_turn) 
-           or (move_str[0].islower() and is_white_turn)):
+           ((move_str[0].isupper() and not is_white_turn) or (move_str[0].islower() and is_white_turn)):
             raise WRONG_INPUT(move_str, msg="Wrong piece team entered.")
         return True
 
-
     # TODO A regex way should be way more readable but this works for now.
+
     @staticmethod
     def decode_to_move(move_str, board, is_white_turn):
         # Because of the case for e.g: "exf4"
@@ -108,18 +109,18 @@ class Move:
         if move_str[1] in TILE_NAMES:
             start_tile = board.get_tile_from_piece(piece_code, col=move_str[1])
 
-
         for i, ch in enumerate(move_str[1:]):
             move_code, is_action = Move.check_symbol_for_action(move_code, ch)
             if is_action is False:
                 if ch in TILE_NUMBERS:
                     if start_tile == -1:
-                        start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-                    end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+                        start_tile = board.find_tile_from_str(
+                            row=ch, col=move_str[i])
+                    end_tile = board.find_tile_from_str(
+                        row=ch, col=move_str[i])
                 # We can have a piece symbol only in the very first pos.
                 elif ch not in (TILE_NUMBERS + TILE_NAMES):
                     raise WRONG_INPUT(move_str)
-        
 
         return Move(piece_code, start_tile, end_tile, move_code, move_str)
 
@@ -133,6 +134,26 @@ class Move:
             return Move.add_action(move_code, MoveTypes.CHECKMATE), True
         return move_code, False
 
+    @staticmethod
+    def find_move_direction(start, end):
+        diff = end - start
+
+        if (diff % 7) == 0:
+            steps = diff // 7
+            # UpRight - DownLeft
+            return -7 if steps < 0 else 7
+        elif (diff % 8) == 0:
+            steps = diff // 8
+            if steps == 0:
+                # Left - Right
+                return -1 if diff < 0 else 1
+            else:
+                # Up - Down
+                return -8 if steps < 0 else 8
+        elif (diff % 9) == 0:
+            steps = diff // 9
+            # UpLeft - DownRight
+            return -9 if steps < 0 else 9
 
     def add_action(move_code, move_action) -> int:
         """Check if move action has been repeated.
@@ -143,7 +164,7 @@ class Move:
             A binary way to represent our moves.
         move_action : int
             A binary way to show the type of the move action.
-        """        
+        """
         if (move_code & MoveTypes.MOVE_MASK) == move_action:
             move_code = MoveTypes.VALUE_ERROR
         else:

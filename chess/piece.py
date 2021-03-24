@@ -4,16 +4,16 @@
 class Piece:
     """Info about the piece type moves-set."""
 
-    EMPTY  = 0 
-    KING   = 1
-    PAWN   = 2
+    EMPTY = 0
+    KING = 1
+    PAWN = 2
     KNIGHT = 3
     BISHOP = 5
-    ROOK   = 6
-    QUEEN  = 7
+    ROOK = 6
+    QUEEN = 7
 
-    WHITE  = 8
-    BLACK  = 16
+    WHITE = 8
+    BLACK = 16
 
     TYPE_MASK = 0b00111
     COLOUR_MASK = 0b11000
@@ -21,12 +21,12 @@ class Piece:
     @staticmethod
     def move_sets():
         return {Piece.KING: Piece.king_moveset,
-                    Piece.PAWN: Piece.pawn_moveset,
-                    Piece.BISHOP: Piece.bishop_moveset,
-                    Piece.KNIGHT: Piece.knight_moveset,
-                    Piece.ROOK: Piece.rook_moveset,
-                    Piece.QUEEN: Piece.queen_moveset,
-                    Piece.PAWN: Piece.pawn_moveset}
+                Piece.PAWN: Piece.pawn_moveset,
+                Piece.BISHOP: Piece.bishop_moveset,
+                Piece.KNIGHT: Piece.knight_moveset,
+                Piece.ROOK: Piece.rook_moveset,
+                Piece.QUEEN: Piece.queen_moveset,
+                Piece.PAWN: Piece.pawn_moveset}
 
     # def __init__(self, piece_code):
     #     if piece_code <= 0:
@@ -48,7 +48,7 @@ class Piece:
         -------
         int
             This will return only the type part of the binary num.
-        """        
+        """
         return piece_code & Piece.TYPE_MASK
 
     @staticmethod
@@ -64,10 +64,10 @@ class Piece:
         -------
         int
             This will return only the colour part of the binary num.
-        """        
+        """
         return piece_code & Piece.COLOUR_MASK
 
-    @staticmethod 
+    @staticmethod
     def get_colour_and_type(piece_code):
         """Get both the colour and the type of the piece.
 
@@ -78,9 +78,9 @@ class Piece:
 
         Returns
         -------
-        tuple 
+        tuple
             A tuple with both the colour and the type of the piece.
-        """        
+        """
         return (Piece.get_colour(piece_code), Piece.get_type(piece_code))
 
     @staticmethod
@@ -99,28 +99,28 @@ class Piece:
         """
         path = f"{imgs_path}/"
 
-        colour, type = Piece.get_colour_and_type(piece_code)
+        colour, p_type = Piece.get_colour_and_type(piece_code)
 
         if colour == Piece.WHITE:
             path += 'w'
         elif colour == Piece.BLACK:
             path += 'b'
 
-        if type == Piece.KING:
+        if p_type == Piece.KING:
             path += 'k'
-        elif type == Piece.PAWN:
+        elif p_type == Piece.PAWN:
             path += 'p'
-        elif type == Piece.KNIGHT:
+        elif p_type == Piece.KNIGHT:
             path += 'n'
-        elif type == Piece.BISHOP:
+        elif p_type == Piece.BISHOP:
             path += 'b'
-        elif type == Piece.ROOK:
+        elif p_type == Piece.ROOK:
             path += 'r'
-        elif type == Piece.QUEEN:
+        elif p_type == Piece.QUEEN:
             path += 'q'
 
         return f"{path}.png"
-    
+
     @staticmethod
     def is_our_teams_turn(piece_code, is_white_turn):
         """Return true if given a piece its his team turn.
@@ -136,7 +136,7 @@ class Piece:
         -------
         bool
             Show if its the given's piece team turn to play.
-        """        
+        """
         piece_colour = Piece.get_colour(piece_code)
         if piece_colour == Piece.WHITE and is_white_turn:
             return True
@@ -174,32 +174,31 @@ class Piece:
         -------
         str
             The corresponding symbol for the piece.
-        """        
+        """
         symbol = ''
-        colour, type = Piece.get_colour_and_type(piece_code)
+        colour, p_type = Piece.get_colour_and_type(piece_code)
 
-        if type == Piece.EMPTY:
+        if p_type == Piece.EMPTY:
             return ' '
-        if type == Piece.KING:
+        if p_type == Piece.KING:
             symbol = 'k'
-        elif type == Piece.PAWN:
+        elif p_type == Piece.PAWN:
             symbol = 'p'
-        elif type == Piece.KNIGHT:
+        elif p_type == Piece.KNIGHT:
             symbol = 'n'
-        elif type == Piece.BISHOP:
+        elif p_type == Piece.BISHOP:
             symbol = 'b'
-        elif type == Piece.ROOK:
+        elif p_type == Piece.ROOK:
             symbol = 'r'
-        elif type == Piece.QUEEN:
+        elif p_type == Piece.QUEEN:
             symbol = 'q'
-        
+
         if colour == Piece.WHITE:
             return symbol.upper()
         else:
             return symbol
 
-
-
+    @staticmethod
     def find_moveset(piece_code):
         """Find the correct moveset for a piece.
 
@@ -212,46 +211,48 @@ class Piece:
         -------
         function
             The corresponding moveset for the piece.
-        """        
-        if piece_code & Piece.KING:
+        """
+        p_type = Piece.get_type(piece_code)
+        if p_type & Piece.KING:
             return Piece.king_moveset
-        elif piece_code & Piece.PAWN:
+        elif p_type & Piece.PAWN:
             return Piece.pawn_moveset
-        elif piece_code & Piece.KNIGHT:
+        elif p_type & Piece.KNIGHT:
             return Piece.knight_moveset
-        elif piece_code & Piece.BISHOP:
+        elif p_type & Piece.BISHOP:
             return Piece.bishop_moveset
-        elif piece_code & Piece.ROOK:
+        elif p_type & Piece.ROOK:
             return Piece.rook_moveset
-        elif piece_code & Piece.QUEEN:
+        elif p_type & Piece.QUEEN:
             return Piece.queen_moveset
 
     @staticmethod
     def queen_moveset(pos):
-        """Generate queen moves based on the position."""        
+        """Generate queen moves based on the position."""
         pass
 
     @staticmethod
     def rook_moveset(pos):
-        """Generate rook moves based on the position."""        
+        """Generate rook moves based on the position."""
+        # return {pos - 1, pos + 1, }
         pass
 
     @staticmethod
     def bishop_moveset(pos):
-        """Generate bishop moves based on the position."""        
+        """Generate bishop moves based on the position."""
         pass
 
     @staticmethod
     def knight_moveset(pos):
-        """Generate knight moves based on the position."""        
+        """Generate knight moves based on the position."""
         pass
 
     @staticmethod
     def pawn_moveset(pos):
-        """Generate pawn moves based on the position."""        
+        """Generate pawn moves based on the position."""
         pass
 
     @staticmethod
     def king_moveset(pos):
-        """Generate king moves based on the position."""        
-        pass
+        """Generate king moves based on the position."""
+        return {pos - 1, pos + 1, pos - 7, pos + 7, pos - 8, pos + 8, pos - 9, pos + 9}

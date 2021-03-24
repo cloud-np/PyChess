@@ -27,20 +27,41 @@ class Game:
             self.visuals = GameVisuals(self, BOARD_SIZE, self.board.state)
             self.visuals.main_loop()
 
-
     def __str__(self) -> str:
         """Represent the current game and its info."""
         return f"Created: " \
                f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
 
-    
-    # For now just return true
     def is_move_valid(self, start_tile, end_tile):
+        """Return whether or not a move is valid.
+
+        We take for granted that the given input is correct and the
+        starting tile does have the correct piece code.
+
+        Parameters
+        ----------
+        start_tile : int
+            Starting tile of the piece.
+        end_tile : int
+            Ending tile of the piece.
+        piece_code : uint8
+            A binary way to represnt our piece.
+
+        Returns
+        -------
+        bool
+            Returns whether or not a move is valid.
+        """
+        piece_code = self.board.state[start_tile]
+        move_set = Piece.find_moveset(piece_code)
+        print(move_set)
+        print(move_set(start_tile))
+
+        # move_direction = Move.find_move_direction(start_t, end_t)
         return True
 
     def register_move(self):
         self.is_white_turn = not self.is_white_turn
-
 
     def is_piece_pickable(self, piece_code):
         """Determine if you can pick a piece.
@@ -53,13 +74,9 @@ class Game:
         Returns
         -------
         bool
-            If the piece is on the same colour as the player 
+            If the piece is on the same colour as the player
             who is turn to play then the pick is pickable.
         """
         if not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
             return False
         return True
-
-
-
-
