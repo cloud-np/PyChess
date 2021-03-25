@@ -224,8 +224,10 @@ class GameVisuals:
                 self.place_picked_piece_back()
             return True
         elif self.game.is_move_valid(self.picked_piece["index"], index):
+            # Update Game state
+            self.game.register_move(self.picked_piece["index"], index)
+            # Update visuals
             self.swap_picked_piece(index)
-            self.game.register_move()
             self.change_cursor("arrow")
             return True
         return False
@@ -267,8 +269,7 @@ class GameVisuals:
 
         if self.picked_piece["index"] == index:
             return True
-        elif self.tiles[index].piece_img is not None:
-            # and self.game.is_piece_pickable(piece_code):
+        elif self.tiles[index].piece_img is not None and self.game.is_piece_pickable(piece_code):
 
             self.change_cursor("diamond")
             self.set_picked_piece(index)

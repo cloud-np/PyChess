@@ -14,12 +14,21 @@ class Piece:
 
     WHITE = 8
     BLACK = 16
+    INVALID = 32
 
-    TYPE_MASK = 0b00111
-    COLOUR_MASK = 0b11000
+    TYPE_MASK = 0b000111
+    COLOUR_MASK = 0b011000
+    ERROR_MASK = 0b100000
 
     @staticmethod
     def move_sets():
+        """Map in a dictionary all the functions for the pieces.
+
+        Returns
+        -------
+        dict
+            Return all the functions for each piece.
+        """
         return {Piece.KING: Piece.king_moveset,
                 Piece.PAWN: Piece.pawn_moveset,
                 Piece.BISHOP: Piece.bishop_moveset,

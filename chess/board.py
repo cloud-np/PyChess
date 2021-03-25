@@ -61,6 +61,9 @@ class Board:
         ValueError
             In case there is a wrong symbol in the fen.
         """
+        # np.full((120), 32, dtype="uint8")
+        # Adding the error bits should be done when creating the board obj.
+        # The pos could start from 21 and stop at 98
         state = np.zeros((self.size), dtype="uint8")
         pos = 0
         for ch in fen:

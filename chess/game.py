@@ -53,14 +53,18 @@ class Game:
             Returns whether or not a move is valid.
         """
         piece_code = self.board.state[start_tile]
-        move_set = Piece.find_moveset(piece_code)
-        print(move_set)
-        print(move_set(start_tile))
+        get_piece_moves = Piece.find_moveset(piece_code)
+        if end_tile not in get_piece_moves(start_tile):
+            return False
+        print(f"start-tile: {start_tile} end-tile: {end_tile}")
+        print(f"moves: {get_piece_moves(start_tile)}")
 
         # move_direction = Move.find_move_direction(start_t, end_t)
         return True
 
-    def register_move(self):
+    def register_move(self, old_index: int, new_index: int):
+        self.board.state[new_index] = self.board.state[old_index]
+        self.board.state[old_index] = Piece.EMPTY
         self.is_white_turn = not self.is_white_turn
 
     def is_piece_pickable(self, piece_code):
