@@ -264,4 +264,4 @@ class Piece:
     @staticmethod
     def king_moveset(pos):
         """Generate king moves based on the position."""
-        return {pos - 1, pos + 1, pos - 7, pos + 7, pos - 8, pos + 8, pos - 9, pos + 9}
+        return {pos - 1, pos + 1, pos - 11, pos + 11, pos - 10, pos + 10, pos - 9, pos + 9}

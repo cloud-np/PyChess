@@ -135,6 +135,10 @@ class Move:
         return move_code, False
 
     @staticmethod
+    def find_invalids(moves, board):
+        pass
+
+    @staticmethod
     def find_move_direction(start, end):
         diff = end - start
 

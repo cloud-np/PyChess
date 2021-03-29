@@ -9,7 +9,8 @@ from chess.frontend.visuals import GameVisuals
 
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 STARTING_FEN = "rnbqkbnr/ppppp1pp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"
-BOARD_SIZE = 64
+BOARD_SIZE = 120
+VISUAL_BOARD_SIZE = 64
 
 
 class Game:
@@ -24,7 +25,7 @@ class Game:
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
         # self.moves_history:
         if not no_visuals:
-            self.visuals = GameVisuals(self, BOARD_SIZE, self.board.state)
+            self.visuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
             self.visuals.main_loop()
 
     def __str__(self) -> str:
@@ -52,9 +53,11 @@ class Game:
         bool
             Returns whether or not a move is valid.
         """
+        start_tile = Board.normalize_index(start_tile)
+        end_tile = Board.normalize_index(end_tile)
         piece_code = self.board.state[start_tile]
         get_piece_moves = Piece.find_moveset(piece_code)
-        if end_tile not in get_piece_moves(start_tile):
+        if end_tile not in Move.remove_invalids(moves=get_piece_moves(start_tile), board=self.board.state):
             return False
         print(f"start-tile: {start_tile} end-tile: {end_tile}")
         print(f"moves: {get_piece_moves(start_tile)}")
@@ -63,6 +66,8 @@ class Game:
         return True
 
     def register_move(self, old_index: int, new_index: int):
+        new_index = Board.normalize_index(new_index)
+        old_index = Board.normalize_index(old_index)
         self.board.state[new_index] = self.board.state[old_index]
         self.board.state[old_index] = Piece.EMPTY
         self.is_white_turn = not self.is_white_turn

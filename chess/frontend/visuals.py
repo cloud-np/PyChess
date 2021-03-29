@@ -1,10 +1,12 @@
 """Creates the visuals for the game."""
 import pygame as py_g
 from colorama import Fore
+from chess.board import Board
 from chess.piece import Piece
 
 
 IMGS_PATH = "chess/assets/images"
+BOARD_OFFSET = 21
 
 
 class EventType:
@@ -64,7 +66,7 @@ class Tile:
         piece_img : Surface, optional
             Holds the img that we will draw on screen, by default None
         """
-        self.index = index
+        self.index = index + BOARD_OFFSET
         self.name = name
         self.piece_img = piece_img
         self.is_white = is_white
@@ -315,7 +317,7 @@ class GameVisuals:
             The index and piece that occupies the tile.
         """
         index = (m_pos[1] // 100) * 8 + (m_pos[0] // 100)
-        piece_code = self.game.board.state[index]
+        piece_code = self.game.board.state[Board.normalize_index(index)]
 
         if self.game.debug:
             print(m_pos, f"tile: {index}")
@@ -375,12 +377,14 @@ class GameVisuals:
             colour = not colour
             tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
-            if board_state[i] > 0:
-                image_path = Piece.get_img_for_piece(board_state[i], IMGS_PATH)
-                # Draw pieces and add the piece to 'database'
-                img = py_g.image.load(image_path)
-                img = py_g.transform.scale(img, (100, 100))
-                tile.piece_img = img
+            index = Board.normalize_index(i)
+            if board_state[index] > Piece.EMPTY:
+                if board_state[index] != Piece.INVALID:
+                    image_path = Piece.get_img_for_piece(board_state[index], IMGS_PATH)
+                    # Draw pieces and add the piece to 'database'
+                    img = py_g.image.load(image_path)
+                    img = py_g.transform.scale(img, (100, 100))
+                    tile.piece_img = img
 
             # if self.debug is True:
             #     print(f'x: {x_pos} y: {y_pos} i: {i}')
