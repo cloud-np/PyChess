@@ -17,9 +17,10 @@ class EventType:
     STOP = 1
     START = 2
     SHOW_INDEX = 3
-    SHOW_IMGS = 4
-    MOUSE_BUTTONDOWN = 5
-    MOUSE_BUTTONUP = 6
+    SHOW_NORMALIZED_INDEX = 4
+    SHOW_IMGS = 5
+    MOUSE_BUTTONDOWN = 6
+    MOUSE_BUTTONUP = 7
 
 
 class Background(py_g.sprite.Sprite):
@@ -66,7 +67,7 @@ class Tile:
         piece_img : Surface, optional
             Holds the img that we will draw on screen, by default None
         """
-        self.index = index + BOARD_OFFSET
+        self.index = Board.normalize_index(index)
         self.name = name
         self.piece_img = piece_img
         self.is_white = is_white
@@ -92,6 +93,7 @@ class GameVisuals:
         """
         self.game = game
         self.show_indexes = False
+        self.show_normalized_indexes = False
         self.show_imgs = False
         self.is_running = False
         self.is_piece_picked = False
@@ -125,10 +127,10 @@ class GameVisuals:
         self.screen.fill((0, 0, 0))
         self.screen.blit(self.background.image, self.background.rect)
 
-    def draw_indexes(self) -> None:
+    def draw_indexes(self, normalised=False) -> None:
         """Show the index number of the tile on screen."""
-        for tile in self.tiles:
-            tile.text_surface = self.font.render(f"{tile.index}", False, (0, 0, 0))
+        for i, tile in enumerate(self.tiles):
+            tile.text_surface = self.font.render(f"{tile.index if normalised is False else i}", False, (0, 0, 0))
             self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
     def draw_imgs(self) -> None:
@@ -184,6 +186,8 @@ class GameVisuals:
                 self.is_running = False
             elif event_code == EventType.SHOW_INDEX:
                 self.show_indexes = not self.show_indexes
+            elif event_code == EventType.SHOW_NORMALIZED_INDEX:
+                self.show_normalized_indexes = not self.show_normalized_indexes
             elif event_code == EventType.SHOW_IMGS:
                 self.show_imgs = not self.show_imgs
             elif event_code == EventType.MOUSE_BUTTONDOWN:
@@ -200,6 +204,9 @@ class GameVisuals:
 
             if self.show_indexes:
                 self.draw_indexes()
+
+            if self.show_normalized_indexes:
+                self.draw_indexes(normalised=True)
 
             # Update everything on the screen
             py_g.display.update()
@@ -225,7 +232,7 @@ class GameVisuals:
             if self.picked_piece['img'] is not None:
                 self.place_picked_piece_back()
             return True
-        elif self.game.is_move_valid(self.picked_piece["index"], index):
+        elif self.game.is_player_move_valid(self.picked_piece["index"], index):
             # Update Game state
             self.game.register_move(self.picked_piece["index"], index)
             # Update visuals
@@ -341,9 +348,11 @@ class GameVisuals:
             elif event.type == py_g.MOUSEBUTTONUP:
                 return EventType.MOUSE_BUTTONUP
             elif event.type == py_g.KEYDOWN:
-                if event.key == py_g.K_d:
+                if event.key == py_g.K_1:
                     return EventType.SHOW_INDEX
-                if event.key == py_g.K_i:
+                if event.key == py_g.K_2:
+                    return EventType.SHOW_NORMALIZED_INDEX
+                if event.key == py_g.K_3:
                     return EventType.SHOW_IMGS
 
                 #     pick_piece(mouse_x, mouse_y)

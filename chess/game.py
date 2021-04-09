@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from chess.piece import Piece
 from chess.board import Board
+from chess.move import Move
 from datetime import datetime
 from chess.frontend.visuals import GameVisuals
 
@@ -30,11 +31,12 @@ class Game:
 
     def __str__(self) -> str:
         """Represent the current game and its info."""
-        return f"Created: " \
-               f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
+        return (
+            f"Created: " f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
+        )
 
-    def is_move_valid(self, start_tile, end_tile):
-        """Return whether or not a move is valid.
+    def is_player_move_valid(self, start_tile, end_tile):
+        """Return whether or not the player move is valid.
 
         We take for granted that the given input is correct and the
         starting tile does have the correct piece code.
@@ -56,11 +58,14 @@ class Game:
         start_tile = Board.normalize_index(start_tile)
         end_tile = Board.normalize_index(end_tile)
         piece_code = self.board.state[start_tile]
-        get_piece_moves = Piece.find_moveset(piece_code)
-        if end_tile not in Move.remove_invalids(moves=get_piece_moves(start_tile), board=self.board.state):
-            return False
+        get_piece_moves = Piece.find_moveset(piece_code)  # Find the correct funtion for the piece.
+
+        possible_moves = Move.remove_off_bounds_tiles(get_piece_moves(start_tile))
+
         print(f"start-tile: {start_tile} end-tile: {end_tile}")
-        print(f"moves: {get_piece_moves(start_tile)}")
+        print(f"moves: {possible_moves}")
+        if end_tile not in possible_moves:
+            return False
 
         # move_direction = Move.find_move_direction(start_t, end_t)
         return True

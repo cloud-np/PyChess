@@ -222,17 +222,17 @@ class Piece:
             The corresponding moveset for the piece.
         """
         p_type = Piece.get_type(piece_code)
-        if p_type & Piece.KING:
+        if p_type == Piece.KING:
             return Piece.king_moveset
-        elif p_type & Piece.PAWN:
+        elif p_type == Piece.PAWN:
             return Piece.pawn_moveset
-        elif p_type & Piece.KNIGHT:
+        elif p_type == Piece.KNIGHT:
             return Piece.knight_moveset
-        elif p_type & Piece.BISHOP:
+        elif p_type == Piece.BISHOP:
             return Piece.bishop_moveset
-        elif p_type & Piece.ROOK:
+        elif p_type == Piece.ROOK:
             return Piece.rook_moveset
-        elif p_type & Piece.QUEEN:
+        elif p_type == Piece.QUEEN:
             return Piece.queen_moveset
 
     @staticmethod
@@ -254,7 +254,7 @@ class Piece:
     @staticmethod
     def knight_moveset(pos):
         """Generate knight moves based on the position."""
-        pass
+        return {pos - 8, pos + 8, pos - 12, pos + 12, pos - 19, pos + 19, pos - 21, pos + 21}
 
     @staticmethod
     def pawn_moveset(pos):

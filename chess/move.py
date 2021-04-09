@@ -9,6 +9,15 @@ PIECE_SYMBOLS = "rnbqk"
 TILE_NUMBERS = "12345678"
 TILE_NAMES = "abcdefgh"
 
+""" We should hardcode this values so we can evaluate
+    faster which moves are in-bounds or not. """
+INVALID_TILES = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 30, 40, 60, 70, 80, 90, 19, 29, 39, 49, 59, 69, 79, 89, 99,
+    100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
+    114, 115, 116, 117, 118, 119
+}
+
 
 class MoveTypes:
     """A binary way to represent moves and move actions."""
@@ -54,10 +63,12 @@ class Move:
         self.read_form = read_form
 
     def __str__(self):
-        return f"start_tile: {self.start_tile}\n" + \
-               f"end_tile: {self.end_tile}\n" + \
-               f"piece_code: {self.piece_code}\n" + \
-               f"move_code: {self.move_code}\n"
+        return (
+            f"start_tile: {self.start_tile}\n"
+            + f"end_tile: {self.end_tile}\n"
+            + f"piece_code: {self.piece_code}\n"
+            + f"move_code: {self.move_code}\n"
+        )
 
     # TODO write this a bit cleaner.
     def is_symbol_turn(move_str, is_white_turn):
@@ -80,8 +91,7 @@ class Move:
         WRONG_INPUT
             If its wrong character or its not this teams turn to play.
         """
-        if (move_str[0] not in TILE_NAMES) and \
-           ((move_str[0].isupper() and not is_white_turn) or (move_str[0].islower() and is_white_turn)):
+        if (move_str[0] not in TILE_NAMES) and ((move_str[0].isupper() and not is_white_turn) or (move_str[0].islower() and is_white_turn)):
             raise WRONG_INPUT(move_str, msg="Wrong piece team entered.")
         return True
 
@@ -114,10 +124,8 @@ class Move:
             if is_action is False:
                 if ch in TILE_NUMBERS:
                     if start_tile == -1:
-                        start_tile = board.find_tile_from_str(
-                            row=ch, col=move_str[i])
-                    end_tile = board.find_tile_from_str(
-                        row=ch, col=move_str[i])
+                        start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+                    end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
                 # We can have a piece symbol only in the very first pos.
                 elif ch not in (TILE_NUMBERS + TILE_NAMES):
                     raise WRONG_INPUT(move_str)
@@ -126,17 +134,29 @@ class Move:
 
     @staticmethod
     def check_symbol_for_action(move_code, ch):
-        if ch == 'x':
+        if ch == "x":
             return Move.add_action(move_code, MoveTypes.TAKES), True
-        elif ch == '+':
+        elif ch == "+":
             return Move.add_action(move_code, MoveTypes.CHECK), True
-        elif ch == '#':
+        elif ch == "#":
             return Move.add_action(move_code, MoveTypes.CHECKMATE), True
         return move_code, False
 
     @staticmethod
-    def find_invalids(moves, board):
-        pass
+    def remove_off_bounds_tiles(moves):
+        """Filter the invalid tiles.
+
+        Parameters
+        ----------
+        moves : set
+            A set of moves that the piece could go in theory.
+
+        Returns
+        -------
+        set
+            The new filtered set without the out of bounds tiles.
+        """
+        return moves - INVALID_TILES
 
     @staticmethod
     def find_move_direction(start, end):
@@ -178,7 +198,7 @@ class Move:
     # TODO Work in progress. (No real reason to make this yet)
 
     def encode_to_str(self) -> str:
-        move_str = ''
+        move_str = ""
 
         # if self.
 
