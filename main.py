@@ -5,6 +5,7 @@ from chess.game import Game
 if __name__ == "__main__":
 
     # TODO
+    # 0) Make a GameController that controlls both the Game/GameLogic and GameVisuals
     # 1) Make the basic piece movements.
     # 2) Add the castle option in decoding move.
     # 3) Encode moves to strings.

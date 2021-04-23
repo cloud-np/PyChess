@@ -4,8 +4,6 @@
   },
   "code-runner.ignoreSelection": true,
   "autoDocstring.docstringFormat": "numpy",
-  // "python.pythonPath": "./pychess_env/"
-  "python.pythonPath": "pychess_env_windows\\Scripts\\python.exe",
   "python.autoComplete.extraPaths": ["./**"],
   // "python.autoComplete.extraPaths": [".\\chess\\piece.py"],
   "python.linting.flake8Enabled": true,
@@ -13,4 +11,8 @@
   "python.linting.pylintEnabled": false,
   "python.linting.pydocstyleEnabled": true,
   "python.linting.enabled": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.extraPaths": [
+    "./**"
+  ],
 }

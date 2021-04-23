@@ -1,5 +1,6 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
+from uuid import UUID
 
 from chess.piece import Piece
 from chess.board import Board
@@ -17,16 +18,16 @@ VISUAL_BOARD_SIZE = 64
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug=False, player1="PC", player2="PC", no_visuals=False):
+    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", no_visuals: bool = False):
         """Construct."""
-        self.id: uuid4 = uuid4()
+        self.id: UUID = uuid4()
         self.time_created = datetime.now()
-        self.debug = debug
-        self.is_white_turn = True
+        self.debug: bool = debug
+        self.is_white_turn: bool = True
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
         # self.moves_history:
         if not no_visuals:
-            self.visuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
+            self.visuals: GameVisuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
             self.visuals.main_loop()
 
     def __str__(self) -> str:
@@ -35,7 +36,7 @@ class Game:
             f"Created: " f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
         )
 
-    def is_player_move_valid(self, start_tile, end_tile):
+    def is_player_move_valid(self, start_tile: int, end_tile: int) -> bool:
         """Return whether or not the player move is valid.
 
         We take for granted that the given input is correct and the
@@ -77,7 +78,7 @@ class Game:
         self.board.state[old_index] = Piece.EMPTY
         self.is_white_turn = not self.is_white_turn
 
-    def is_piece_pickable(self, piece_code):
+    def is_piece_pickable(self, piece_code: int) -> bool:
         """Determine if you can pick a piece.
 
         Parameters

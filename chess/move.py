@@ -1,7 +1,10 @@
 from chess.piece import Piece
+from typing import Set
+from chess.board import Board
 
 
 def WRONG_INPUT(u_input, msg="Wrong move input:"):
+    """Just a helper function to more readable maybe value errors."""
     return ValueError(f"{msg} {u_input}")
 
 
@@ -11,12 +14,10 @@ TILE_NAMES = "abcdefgh"
 
 """ We should hardcode this values so we can evaluate
     faster which moves are in-bounds or not. """
-INVALID_TILES = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    20, 30, 40, 60, 70, 80, 90, 19, 29, 39, 49, 59, 69, 79, 89, 99,
-    100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
-    114, 115, 116, 117, 118, 119
-}
+INVALID_TILES: Set[int] = {
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 40,
+    60, 70, 80, 90, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100, 101, 102, 103, 104, 105, 106, 107,
+    108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, }
 
 
 class MoveTypes:
@@ -40,7 +41,7 @@ class MoveTypes:
 class Move:
     """Holds info about the move made."""
 
-    def __init__(self, piece_code, start_tile, end_tile, move_code, read_form):
+    def __init__(self, piece_code: int, start_tile: int, end_tile: int, move_code: int, read_form: str):
         """Components that indentify a move.
 
         Parameters
@@ -65,13 +66,14 @@ class Move:
     def __str__(self):
         return (
             f"start_tile: {self.start_tile}\n"
-            + f"end_tile: {self.end_tile}\n"
-            + f"piece_code: {self.piece_code}\n"
-            + f"move_code: {self.move_code}\n"
+            f"end_tile: {self.end_tile}\n"
+            f"piece_code: {self.piece_code}\n"
+            f"move_code: {self.move_code}\n"
         )
 
     # TODO write this a bit cleaner.
-    def is_symbol_turn(move_str, is_white_turn):
+    @staticmethod
+    def is_symbol_turn(move_str: str, is_white_turn: bool):
         """Given the first symbol show if the given piece is correct.
 
         Parameters
@@ -98,7 +100,7 @@ class Move:
     # TODO A regex way should be way more readable but this works for now.
 
     @staticmethod
-    def decode_to_move(move_str, board, is_white_turn):
+    def decode_to_move(move_str: str, board: Board, is_white_turn: bool) -> 'Move':
         # Because of the case for e.g: "exf4"
         # we can't be sure if the piece is black or not
         piece_code = Piece.EMPTY
@@ -133,7 +135,7 @@ class Move:
         return Move(piece_code, start_tile, end_tile, move_code, move_str)
 
     @staticmethod
-    def check_symbol_for_action(move_code, ch):
+    def check_symbol_for_action(move_code: int, ch: str):
         if ch == "x":
             return Move.add_action(move_code, MoveTypes.TAKES), True
         elif ch == "+":
@@ -143,23 +145,25 @@ class Move:
         return move_code, False
 
     @staticmethod
-    def remove_off_bounds_tiles(moves):
+    def remove_off_bounds_tiles(moves: Set[int]):
         """Filter the invalid tiles.
 
         Parameters
         ----------
-        moves : set
+        moves : Set[int]
             A set of moves that the piece could go in theory.
 
         Returns
         -------
-        set
+          Set[int]
             The new filtered set without the out of bounds tiles.
         """
         return moves - INVALID_TILES
 
+    # TODO check if this function works correctly.
+    # Also make a direction enum or something.
     @staticmethod
-    def find_move_direction(start, end):
+    def find_move_direction(start: int, end: int):
         diff = end - start
 
         if (diff % 7) == 0:
@@ -179,7 +183,8 @@ class Move:
             # UpLeft - DownRight
             return -9 if steps < 0 else 9
 
-    def add_action(move_code, move_action) -> int:
+    @staticmethod
+    def add_action(move_code: int, move_action: int) -> int:
         """Check if move action has been repeated.
 
         Parameters

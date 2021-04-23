@@ -1,5 +1,7 @@
 """board module contains all the classes and methods which are needed for a chessboard to be functional."""
 import numpy as np
+# import numpy.typing as npt
+from typing import Dict, List
 from chess.piece import Piece
 
 BOARD_OFFSET = 21
@@ -13,7 +15,7 @@ class Board:
     info about the piece that either occupies it there or not.
     """
 
-    def __init__(self, fen, size):
+    def __init__(self, fen: str, size: int):
         """Construct all the necessary attributes for the board object.
 
         Parameters
@@ -23,45 +25,59 @@ class Board:
         """
         self.fen: str = fen
         self.size = size
-        self.setup_board_state()
-        self.state = self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
-        self.w_pieces = self.get_pieces(whites=True)
+        # TODO Not sure if this type is correct.
+        self.state: "np.uint" = self.setup_board_state()
+        self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
+        self.w_pieces = self.get_pieces(is_whites=True)
         self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
-        self.b_pieces = self.get_pieces(whites=False)
+        self.b_pieces = self.get_pieces(is_whites=False)
         self.pieces_movesets = Piece.move_sets()
         self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
         print(self)
 
     @staticmethod
-    def normalize_index(index):
+    def normalize_index(index: int) -> int:
         """Calculate the normilized version of the index e.g: 0 -> 21, 16 -> 41."""
         row = index // 8
         return (index + 21) + (row * 2)
 
-    def get_pieces(self, whites):
-        colour = Piece.WHITE if whites else Piece.BLACK
-        pieces = {Piece.KING | colour: list(),
-                  Piece.PAWN | colour: list(),
-                  Piece.BISHOP | colour: list(),
-                  Piece.KNIGHT | colour: list(),
-                  Piece.ROOK | colour: list(),
-                  Piece.QUEEN | colour: list()}
+    def get_pieces(self, is_whites: bool) -> Dict[int, List[int]]:
+        """Given a team color it will return that team's pieces.
+
+        Parameters
+        ----------
+        is_whites : bool
+            Whether or not white pieces were asked to be returned.
+
+        Returns
+        -------
+        Dict[int, List[int]]
+            A map of the existing (white or black) pieces separated in lists
+            based on their type.
+        """
+        colour = Piece.WHITE if is_whites else Piece.BLACK
+        pieces: Dict[int, List[int]] = {Piece.KING | colour: list(),
+                                        Piece.PAWN | colour: list(),
+                                        Piece.BISHOP | colour: list(),
+                                        Piece.KNIGHT | colour: list(),
+                                        Piece.ROOK | colour: list(),
+                                        Piece.QUEEN | colour: list()}
 
         for i, pc in enumerate(self.state):
             if pc != Piece.EMPTY and Piece.get_colour(pc) == colour:
                 pieces[pc].append(i)
         return pieces
 
-    def setup_board_state(self):
+    def setup_board_state(self) -> np.ndarray:
         """Do the setup by making boundries (0-21 98-120) in the board and the board itself."""
-        self.state = np.zeros((self.size), dtype="uint8")
+        state: np.ndarray = np.zeros((self.size), dtype="uint8")
         for i in range(0, 21):
-            self.state[i] |= Piece.INVALID
-        for i in range(98, len(self.state)):
-            self.state[i] |= Piece.INVALID
-        return self.state
+            state[i] |= Piece.INVALID
+        for i in range(98, len(state)):
+            state[i] |= Piece.INVALID
+        return state
 
-    def get_state_from_fen(self, fen):
+    def get_state_from_fen(self, fen: str) -> np.ndarray:
         """Given a fen it will return the board state.
 
         Parameters
@@ -128,14 +144,15 @@ class Board:
         return self.state
 
     # FIXME Needs refactoring because of the new board representation.
-    def get_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+    def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:
         colour = Piece.get_colour(piece_code)
 
+        _col = None
         if row != -1:
             pass
             # inv_row = (8 - row) * 8
         elif col != '':
-            col = Board.get_number_for_col(col)
+            _col = Board.get_number_for_col(col)
 
         pieces = self.w_pieces if colour == Piece.WHITE else self.b_pieces
 
@@ -144,13 +161,14 @@ class Board:
             # me to row/col pou exeis
             c = index % 8
             r = index - c
-            if c == col:
+            if c == _col:
                 return index
             elif r != -1:
                 return index
+        return -1
 
     # FIXME Needs refactoring because of the new board representation.
-    def find_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+    def find_tile_from_piece(self, piece_code: int, row: int = -1, col: str = ''):
         colour, type = Piece.get_colour_and_type(piece_code)
 
         if row != -1:
@@ -173,13 +191,13 @@ class Board:
 
     # FIXME Needs refactoring because of the new board representation.
     @staticmethod
-    def find_tile_from_str(row: str, col: str):
-        col = Board.get_number_for_col(col)
-        row = (8 - int(row))
-        return (row * 8) + col
+    def find_tile_from_str(row: str, col: str) -> int:
+        _col: int = Board.get_number_for_col(col)
+        _row: int = (8 - int(row))
+        return (_row * 8) + _col
 
     @staticmethod
-    def get_number_for_col(col):
+    def get_number_for_col(col: str) -> int:
         if col == 'a':
             return 0
         elif col == 'b':

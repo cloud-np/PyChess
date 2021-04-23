@@ -1,5 +1,7 @@
 """Creates the visuals for the game."""
 import pygame as py_g
+import numpy as np
+from typing import List
 from colorama import Fore
 from chess.board import Board
 from chess.piece import Piece
@@ -32,7 +34,7 @@ class Background(py_g.sprite.Sprite):
         Helps us to visualize the background img.
     """
 
-    def __init__(self, image_file, location):
+    def __init__(self, image_file: str, location: List[int]):
         """Needs basic components for inisializing the bg.
 
         Parameters
@@ -55,7 +57,7 @@ class Tile:
     W_TILE_CLICKED_COLOUR = (255, 204, 102)
     B_TILE_CLICKED_COLOUR = (255, 179, 26)
 
-    def __init__(self, index, is_white=False, text_surface=None, name=' ', piece_img=None):
+    def __init__(self, index: int, is_white: bool = False, text_surface: py_g.Surface = None, name: str = ' ', piece_img: py_g.Surface = None):
         """Hold the info that are needed to be drawn later on.
 
         Parameters
@@ -64,10 +66,12 @@ class Tile:
             Shows the index on board
         name : str
             The name of the tile, by default ' '
+        text_surface : Surface, optional
+            This later on will be a holder for text.
         piece_img : Surface, optional
             Holds the img that we will draw on screen, by default None
         """
-        self.index = Board.normalize_index(index)
+        self.index: int = Board.normalize_index(index)
         self.name = name
         self.piece_img = piece_img
         self.is_white = is_white
@@ -82,7 +86,7 @@ class Tile:
 class GameVisuals:
     """Visuals for the game."""
 
-    def __init__(self, game, board_size, board_state):
+    def __init__(self, game, board_size: int, board_state: np.ndarray):
         """Needs the same pygame module from the Game class.
 
         Parameters

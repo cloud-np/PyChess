@@ -1,4 +1,5 @@
 """Holds everything related to a piece."""
+from typing import Dict, Set, Any
 
 
 class Piece:
@@ -21,7 +22,7 @@ class Piece:
     ERROR_MASK = 0b100000
 
     @staticmethod
-    def move_sets():
+    def move_sets() -> Dict[int, Any]:
         """Map in a dictionary all the functions for the pieces.
 
         Returns
@@ -45,7 +46,7 @@ class Piece:
     #     self.moveset = self.__find_correct_moveset()
 
     @staticmethod
-    def get_type(piece_code):
+    def get_type(piece_code: int):
         """Filter the piece_code and find the piece type.
 
         Parameters
@@ -61,7 +62,7 @@ class Piece:
         return piece_code & Piece.TYPE_MASK
 
     @staticmethod
-    def get_colour(piece_code):
+    def get_colour(piece_code: int):
         """Filter the piece_code and find the piece colour.
 
         Parameters
@@ -77,7 +78,7 @@ class Piece:
         return piece_code & Piece.COLOUR_MASK
 
     @staticmethod
-    def get_colour_and_type(piece_code):
+    def get_colour_and_type(piece_code: int):
         """Get both the colour and the type of the piece.
 
         Parameters
@@ -93,13 +94,15 @@ class Piece:
         return (Piece.get_colour(piece_code), Piece.get_type(piece_code))
 
     @staticmethod
-    def get_img_for_piece(piece_code, imgs_path):
+    def get_img_for_piece(piece_code: int, imgs_path: str) -> str:
         """Find the correct img for a piece.
 
         Parameters
         ----------
         piece_code : uint8
             A way we represent our pieces.
+        imgs_path : str
+            The path to the images folder.
 
         Returns
         -------
@@ -131,7 +134,7 @@ class Piece:
         return f"{path}.png"
 
     @staticmethod
-    def is_our_teams_turn(piece_code, is_white_turn):
+    def is_our_teams_turn(piece_code: int, is_white_turn: bool) -> bool:
         """Return true if given a piece its his team turn.
 
         Parameters
@@ -155,6 +158,23 @@ class Piece:
 
     @staticmethod
     def find_piece_from_symbol(symbol: str) -> int:
+        """Find the piece from a given symbol.
+
+        Parameters
+        ----------
+        symbol : str
+            The given symbol.
+
+        Returns
+        -------
+        int
+            The corrisponding piece code.
+
+        Raises
+        ------
+        ValueError
+            In case the given symbol is invalid.
+        """
         if symbol == 'k':
             return Piece.KING
         elif symbol == 'p':
@@ -171,7 +191,7 @@ class Piece:
             raise ValueError(f"Wrong symbol input to find a piece: {symbol}")
 
     @staticmethod
-    def find_symbol_for_piece(piece_code: int):
+    def find_symbol_for_piece(piece_code: int) -> str:
         """Find the correct symbol for a piece.
 
         Parameters
@@ -208,7 +228,7 @@ class Piece:
             return symbol
 
     @staticmethod
-    def find_moveset(piece_code):
+    def find_moveset(piece_code: int) -> Any:
         """Find the correct moveset for a piece.
 
         Parameters
@@ -236,32 +256,32 @@ class Piece:
             return Piece.queen_moveset
 
     @staticmethod
-    def queen_moveset(pos):
+    def queen_moveset(pos: int):
         """Generate queen moves based on the position."""
         pass
 
     @staticmethod
-    def rook_moveset(pos):
+    def rook_moveset(pos: int):
         """Generate rook moves based on the position."""
         # return {pos - 1, pos + 1, }
         pass
 
     @staticmethod
-    def bishop_moveset(pos):
+    def bishop_moveset(pos: int):
         """Generate bishop moves based on the position."""
         pass
 
     @staticmethod
-    def knight_moveset(pos):
+    def knight_moveset(pos: int) -> Set[int]:
         """Generate knight moves based on the position."""
         return {pos - 8, pos + 8, pos - 12, pos + 12, pos - 19, pos + 19, pos - 21, pos + 21}
 
     @staticmethod
-    def pawn_moveset(pos):
+    def pawn_moveset(pos: int):
         """Generate pawn moves based on the position."""
         pass
 
     @staticmethod
-    def king_moveset(pos):
+    def king_moveset(pos: int) -> Set[int]:
         """Generate king moves based on the position."""
         return {pos - 1, pos + 1, pos - 11, pos + 11, pos - 10, pos + 10, pos - 9, pos + 9}
