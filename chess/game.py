@@ -18,7 +18,7 @@ VISUAL_BOARD_SIZE = 64
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", no_visuals: bool = False):
+    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True):
         """Construct."""
         self.id: UUID = uuid4()
         self.time_created = datetime.now()
@@ -26,7 +26,7 @@ class Game:
         self.is_white_turn: bool = True
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
         # self.moves_history:
-        if not no_visuals:
+        if visuals:
             self.visuals: GameVisuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
             self.visuals.main_loop()
 
