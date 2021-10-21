@@ -46,7 +46,7 @@ class Piece:
     #     self.moveset = self.__find_correct_moveset()
 
     @staticmethod
-    def get_type(piece_code: int):
+    def get_type(piece_code: int) -> int:
         """Filter the piece_code and find the piece type.
 
         Parameters
@@ -62,7 +62,7 @@ class Piece:
         return piece_code & Piece.TYPE_MASK
 
     @staticmethod
-    def get_colour(piece_code: int):
+    def get_colour(piece_code: int) -> int:
         """Filter the piece_code and find the piece colour.
 
         Parameters
@@ -157,6 +157,11 @@ class Piece:
         return False
 
     @staticmethod
+    def is_white(piece_code: int):
+        """Find if the piece is white or not."""
+        return True if Piece.get_colour(piece_code) == Piece.WHITE else False
+
+    @staticmethod
     def find_piece_from_symbol(symbol: str) -> int:
         """Find the piece from a given symbol.
 
@@ -228,32 +233,35 @@ class Piece:
             return symbol
 
     @staticmethod
-    def find_moveset(piece_code: int) -> Any:
+    def get_moveset(start_tile, piece_code: int) -> Set[int]:
         """Find the correct moveset for a piece.
 
         Parameters
         ----------
         piece_code : uint8
             A binary way to represent our pieces
+        start_tile : int
+            The starting tile of the piece
 
         Returns
         -------
-        function
-            The corresponding moveset for the piece.
+        Set[int]
+            Returns all the possible tiles
+            that the specified piece can land.
         """
         p_type = Piece.get_type(piece_code)
         if p_type == Piece.KING:
-            return Piece.king_moveset
+            return Piece.king_moveset(start_tile)
         elif p_type == Piece.PAWN:
-            return Piece.pawn_moveset
+            return Piece.pawn_moveset(start_tile, piece_code)
         elif p_type == Piece.KNIGHT:
-            return Piece.knight_moveset
+            return Piece.knight_moveset(start_tile)
         elif p_type == Piece.BISHOP:
-            return Piece.bishop_moveset
+            return Piece.bishop_moveset(start_tile, piece_code)
         elif p_type == Piece.ROOK:
-            return Piece.rook_moveset
+            return Piece.rook_moveset(start_tile, piece_code)
         elif p_type == Piece.QUEEN:
-            return Piece.queen_moveset
+            return Piece.queen_moveset(start_tile, piece_code)
 
     @staticmethod
     def queen_moveset(pos: int):
@@ -277,9 +285,17 @@ class Piece:
         return {pos - 8, pos + 8, pos - 12, pos + 12, pos - 19, pos + 19, pos - 21, pos + 21}
 
     @staticmethod
-    def pawn_moveset(pos: int):
+    def pawn_moveset(pos: int, piece_code: int) -> Set[int]:
         """Generate pawn moves based on the position."""
-        pass
+        if Piece.is_white(piece_code):
+            moves = {pos - 10, pos - 11, pos - 12}
+            if 80 <= pos < 90:
+                moves.add(pos - 20)
+        else:
+            moves = {pos + 10, pos + 11, pos + 12}
+            if 30 <= pos < 40:
+                moves.add(pos + 20)
+        return moves
 
     @staticmethod
     def king_moveset(pos: int) -> Set[int]:

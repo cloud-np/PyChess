@@ -59,9 +59,9 @@ class Game:
         start_tile = Board.normalize_index(start_tile)
         end_tile = Board.normalize_index(end_tile)
         piece_code = self.board.state[start_tile]
-        get_piece_moves = Piece.find_moveset(piece_code)  # Find the correct funtion for the piece.
+        moves = Piece.get_moveset(start_tile, piece_code)
 
-        possible_moves = Move.remove_off_bounds_tiles(get_piece_moves(start_tile))
+        possible_moves = Move.remove_off_bounds_tiles(moves)
 
         print(f"start-tile: {start_tile} end-tile: {end_tile}")
         print(f"moves: {possible_moves}")
