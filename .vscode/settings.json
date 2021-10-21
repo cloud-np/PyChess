@@ -3,5 +3,17 @@
     "python": "$pythonPath -u main.py",
   },
   "code-runner.ignoreSelection": true,
-  "autoDocstring.docstringFormat": "numpy"
+  "autoDocstring.docstringFormat": "numpy",
+  "python.autoComplete.extraPaths": ["./**"],
+  // "python.autoComplete.extraPaths": [".\\chess\\piece.py"],
+  "python.linting.flake8Enabled": true,
+  "python.linting.flake8Args": ["--ignore", "E501"],
+  "python.linting.pylintEnabled": false,
+  "python.linting.pydocstyleEnabled": true,
+  "python.linting.enabled": true,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.extraPaths": [
+    "./**"
+  ],
+  "python.pythonPath": "venv/bin/python",
 }

@@ -1,5 +1,6 @@
 """Player module has all the information and connections to dbs to get the player's info."""
 
+
 class Player:
     """Keep info about the player."""
 
@@ -13,6 +14,6 @@ class Player:
             Later on this will be the id from the db.
         is_human : bool
             Shows if the player is human or not, by default True
-        """        
+        """
         self.id = id_
         self.is_pc = is_human

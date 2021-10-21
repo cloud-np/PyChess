@@ -1,3 +1,5 @@
 __pycache__/
 pychess_env/
 chess/frontend/images/better/
+.vscode/
+venv/

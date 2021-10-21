@@ -1,6 +1,10 @@
 """board module contains all the classes and methods which are needed for a chessboard to be functional."""
 import numpy as np
+# import numpy.typing as npt
+from typing import Dict, List
 from chess.piece import Piece
+
+BOARD_OFFSET = 21
 
 
 class Board:
@@ -11,7 +15,7 @@ class Board:
     info about the piece that either occupies it there or not.
     """
 
-    def __init__(self, fen, size):
+    def __init__(self, fen: str, size: int):
         """Construct all the necessary attributes for the board object.
 
         Parameters
@@ -21,28 +25,59 @@ class Board:
         """
         self.fen: str = fen
         self.size = size
-        self.state = self.get_state_from_fen(fen)
-        self.w_pieces = self.get_pieces(whites=True)
+        # TODO Not sure if this type is correct.
+        self.state: "np.uint" = self.setup_board_state()
+        self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
+        self.w_pieces = self.get_pieces(is_whites=True)
         self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
-        self.b_pieces = self.get_pieces(whites=False)
+        self.b_pieces = self.get_pieces(is_whites=False)
+        self.pieces_movesets = Piece.move_sets()
         self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
         print(self)
 
-    def get_pieces(self, whites):
-        colour = Piece.WHITE if whites else Piece.BLACK
-        pieces = {Piece.KING | colour: list(),
-                  Piece.PAWN | colour: list(),
-                  Piece.BISHOP | colour: list(),
-                  Piece.KNIGHT | colour: list(),
-                  Piece.ROOK | colour: list(),
-                  Piece.QUEEN | colour: list()}
+    @staticmethod
+    def normalize_index(index: int) -> int:
+        """Calculate the normilized version of the index e.g: 0 -> 21, 16 -> 41."""
+        row = index // 8
+        return (index + 21) + (row * 2)
+
+    def get_pieces(self, is_whites: bool) -> Dict[int, List[int]]:
+        """Given a team color it will return that team's pieces.
+
+        Parameters
+        ----------
+        is_whites : bool
+            Whether or not white pieces were asked to be returned.
+
+        Returns
+        -------
+        Dict[int, List[int]]
+            A map of the existing (white or black) pieces separated in lists
+            based on their type.
+        """
+        colour = Piece.WHITE if is_whites else Piece.BLACK
+        pieces: Dict[int, List[int]] = {Piece.KING | colour: list(),
+                                        Piece.PAWN | colour: list(),
+                                        Piece.BISHOP | colour: list(),
+                                        Piece.KNIGHT | colour: list(),
+                                        Piece.ROOK | colour: list(),
+                                        Piece.QUEEN | colour: list()}
 
         for i, pc in enumerate(self.state):
             if pc != Piece.EMPTY and Piece.get_colour(pc) == colour:
                 pieces[pc].append(i)
         return pieces
 
-    def get_state_from_fen(self, fen):
+    def setup_board_state(self) -> np.ndarray:
+        """Do the setup by making boundries (0-21 98-120) in the board and the board itself."""
+        state: np.ndarray = np.zeros((self.size), dtype="uint8")
+        for i in range(0, 21):
+            state[i] |= Piece.INVALID
+        for i in range(98, len(state)):
+            state[i] |= Piece.INVALID
+        return state
+
+    def get_state_from_fen(self, fen: str) -> np.ndarray:
         """Given a fen it will return the board state.
 
         Parameters
@@ -60,9 +95,17 @@ class Board:
         ValueError
             In case there is a wrong symbol in the fen.
         """
-        state = np.zeros((self.size), dtype="uint8")
-        pos = 0
+        # np.full((120), 32, dtype="uint8")
+        # Adding the error bits should be done when creating the board obj.
+        # The pos could start from 21 and stop at 98
+        pos = 21
         for ch in fen:
+            if pos > 98:
+                raise ValueError(f"Exited board boundries: {pos}")
+            # Skip the invalid positions.
+            elif (pos + 1) % 10 == 0:
+                pos += 2
+                continue
             # Skip that many tiles.
             if ch in "12345678":
                 pos += int(ch)
@@ -95,40 +138,43 @@ class Board:
                 raise ValueError(f"Unkown symbol in fen: {chl}")
 
             # Occupy the pos.
-            state[pos] = piece_code
+            self.state[pos] = piece_code
             pos += 1
 
-        return state
+        return self.state
 
-    def get_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+    # FIXME Needs refactoring because of the new board representation.
+    def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:
         colour = Piece.get_colour(piece_code)
 
+        _col = None
         if row != -1:
-            inv_row = (8 - row) * 8
+            pass
+            # inv_row = (8 - row) * 8
         elif col != '':
-            col = Board.get_number_for_col(col)
-        
+            _col = Board.get_number_for_col(col)
+
         pieces = self.w_pieces if colour == Piece.WHITE else self.b_pieces
 
         for index in pieces[piece_code]:
-            # Des ama to index einai ths idias sthlhs h shras 
+            # Des ama to index einai ths idias sthlhs h shras
             # me to row/col pou exeis
             c = index % 8
-            r = index - c  
-            if c == col:
+            r = index - c
+            if c == _col:
                 return index
             elif r != -1:
                 return index
+        return -1
 
-
-
-
-    def find_tile_from_piece(self, piece_code, row: int = -1, col: str = ''):
+    # FIXME Needs refactoring because of the new board representation.
+    def find_tile_from_piece(self, piece_code: int, row: int = -1, col: str = ''):
         colour, type = Piece.get_colour_and_type(piece_code)
 
         if row != -1:
             inv_row = (8 - row) * 8
-            for i, pc in enumerate(self.state[inv_row:inv_row + 8]):
+            for i, index in enumerate(range(inv_row, inv_row + 8)):
+                pc = self.state[Board.normalize_index(index)]
                 if (Piece.get_colour_and_type(pc)) == (colour, type):
                     return inv_row + i
         elif col != '':
@@ -143,14 +189,15 @@ class Board:
 
         return -1
 
+    # FIXME Needs refactoring because of the new board representation.
     @staticmethod
-    def find_tile_from_str(row: str, col: str):
-        col = Board.get_number_for_col(col)
-        row = (8 - int(row))
-        return (row * 8) + col
+    def find_tile_from_str(row: str, col: str) -> int:
+        _col: int = Board.get_number_for_col(col)
+        _row: int = (8 - int(row))
+        return (_row * 8) + _col
 
     @staticmethod
-    def get_number_for_col(col):
+    def get_number_for_col(col: str) -> int:
         if col == 'a':
             return 0
         elif col == 'b':
@@ -170,36 +217,21 @@ class Board:
         else:
             raise ValueError(f"Wrong value for collumn: {col}")
 
-    @staticmethod
-    def get_number_for_col(col) -> int:
-        if col == 'a':
-            return 0
-        if col == 'b':
-            return 1
-        elif col == 'c':
-            return 2
-        elif col == 'd':
-            return 3
-        elif col == 'e':
-            return 4
-        elif col == 'f':
-            return 5
-        elif col == 'g':
-            return 6
-        elif col == 'h':
-            return 7
-
+    # FIXME Needs refactoring because of the new board representation.
     def __str__(self):
         """Print the board state."""
         x = 0
         print('\t\t\t\t     BOARD')
         print('      0     1     2     3     4     5     6     7')
         print(x, end='   ')
-        for i, piece_code in enumerate(self.state):
+        i = 0
+        for index in range(21, 99):
             if i % 8 == 0 and i != 0:
                 x += 1
                 print()
                 print(x, end='   ')
-            print(f'[ {Piece.find_symbol_for_piece(piece_code)} ]', end=' ')
+                i = 0
+            elif index % 10 != 0:
+                print(f'[ {Piece.find_symbol_for_piece(self.state[index])} ]', end=' ')
+                i += 1
         return ' '
-
