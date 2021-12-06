@@ -18,7 +18,7 @@ VISUAL_BOARD_SIZE = 64
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", no_visuals: bool = False):
+    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True):
         """Construct."""
         self.id: UUID = uuid4()
         self.time_created = datetime.now()
@@ -26,7 +26,7 @@ class Game:
         self.is_white_turn: bool = True
         self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
         # self.moves_history:
-        if not no_visuals:
+        if visuals:
             self.visuals: GameVisuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
             self.visuals.main_loop()
 
@@ -59,9 +59,9 @@ class Game:
         start_tile = Board.normalize_index(start_tile)
         end_tile = Board.normalize_index(end_tile)
         piece_code = self.board.state[start_tile]
-        get_piece_moves = Piece.find_moveset(piece_code)  # Find the correct funtion for the piece.
+        moves = Piece.get_moveset(start_tile, piece_code)
 
-        possible_moves = Move.remove_off_bounds_tiles(get_piece_moves(start_tile))
+        possible_moves = Move.remove_off_bounds_tiles(moves)
 
         print(f"start-tile: {start_tile} end-tile: {end_tile}")
         print(f"moves: {possible_moves}")

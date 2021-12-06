@@ -7,7 +7,7 @@ from chess.board import Board
 from chess.piece import Piece
 
 
-IMGS_PATH = "chess/assets/images"
+IMGS_PATH = "chess/frontend/assets/images"
 BOARD_OFFSET = 21
 
 
