@@ -71,7 +71,7 @@ class Board:
     def setup_board_state(self) -> np.ndarray:
         """Do the setup by making boundries (0-21 98-120) in the board and the board itself."""
         state: np.ndarray = np.zeros((self.size), dtype="uint8")
-        for i in range(0, 21):
+        for i in range(21):
             state[i] |= Piece.INVALID
         for i in range(98, len(state)):
             state[i] |= Piece.INVALID
@@ -113,11 +113,7 @@ class Board:
 
             # Find the color of the piece.
             piece_code = 0b0
-            if ch.isupper():
-                piece_code |= Piece.WHITE
-            else:
-                piece_code |= Piece.BLACK
-
+            piece_code |= Piece.WHITE if ch.isupper() else Piece.BLACK
             # Find the type of the piece.
             chl = ch.lower()
             if chl == 'k':

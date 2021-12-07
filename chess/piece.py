@@ -150,16 +150,12 @@ class Piece:
             Show if its the given's piece team turn to play.
         """
         piece_colour = Piece.get_colour(piece_code)
-        if piece_colour == Piece.WHITE and is_white_turn:
-            return True
-        elif piece_colour == Piece.BLACK and not is_white_turn:
-            return True
-        return False
+        return piece_colour == Piece.WHITE and is_white_turn or piece_colour == Piece.BLACK and not is_white_turn
 
     @staticmethod
     def is_white(piece_code: int):
         """Find if the piece is white or not."""
-        return True if Piece.get_colour(piece_code) == Piece.WHITE else False
+        return Piece.get_colour(piece_code) == Piece.WHITE
 
     @staticmethod
     def find_piece_from_symbol(symbol: str) -> int:
