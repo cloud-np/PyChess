@@ -1,4 +1,3 @@
-from chess.piece import Piece
 from typing import Set
 from chess.board import Board
 
