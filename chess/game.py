@@ -54,13 +54,13 @@ class Game:
         bool
             Returns whether or not a move is valid.
         """
-        piece = self.board.state[start_coords[0]][start_coords[1]]
-        moves = piece.get_moves()
+        piece = self.board.state[start_coords]
+        moves = piece.get_moves(self.board.state)
         # moves = Piece.get_moveset(start_tile, piece_code)
 
         # possible_moves = Move.remove_off_bounds_tiles(moves)
 
-        print(f"start-coords: {start_coords} end-coords: {end_coords}")
+        print(f"{piece.symbol}: {start_coords} --> {end_coords}")
         print(f"moves: {moves}")
         return end_coords in moves
 
@@ -78,15 +78,15 @@ class Game:
             The new coords of the piece.
         """
         # Update pieces.
-        moving_piece = self.board.state[old_coords[0]][old_coords[1]]
+        moving_piece = self.board.state[old_coords]
         moving_piece.set_coords(new_coords)
-        taken_piece = self.board.state[new_coords[0]][new_coords[1]]
-        if taken_piece is not None:
+        taken_piece = self.board.state[new_coords]
+        if isinstance(taken_piece, Piece):
             del taken_piece
 
         # Update board state.
-        self.board.state[new_coords[0]][new_coords[1]] = self.board.state[old_coords[0]][old_coords[1]]
-        self.board.state[old_coords[0]][old_coords[1]] = None
+        self.board.state[new_coords] = self.board.state[old_coords]
+        self.board.state[old_coords] = Piece.EMPTY
         self.is_white_turn = not self.is_white_turn
         print(self.board)
 

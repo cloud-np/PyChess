@@ -14,6 +14,27 @@ from chess.pieces.pawn import Pawn
 BOARD_OFFSET = 21
 
 
+class BoardStateList(list):
+    """This class helps with keeping the indexes in bound."""
+
+    def __init__(self, *args, **kwargs):
+        """Init."""
+        super(BoardStateList, self).__init__(args[0])
+
+    def __setitem__(self, indexes, o):
+        """Made to handle tuples are indexes."""
+        self[indexes[0]][indexes[1]] = o
+
+    def __getitem__(self, indexes):
+        """Handle out of bounds board indexes."""
+        if type(indexes) is int:
+            return super().__getitem__(indexes)
+        for i in indexes:
+            if not 0 <= i <= 7:
+                return Piece.INVALID
+        return super().__getitem__(indexes[0]).__getitem__(indexes[1])
+
+
 class Board:
     """The way we represent our Board is a Piece centric way.
 
@@ -31,8 +52,7 @@ class Board:
             A way to represent the board state.
         """
         self.fen: str = fen
-        # TODO Not sure if this type is correct.
-        self.state: "np.uint" = self.setup_board_state()
+        self.state: BoardStateList = self.setup_board_state()
         self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
 
         # Get White Lists
@@ -105,8 +125,8 @@ class Board:
 
         for i in range(8):
             for j in range(8):
-                piece = self.state[i][j]
-                if piece is not None and piece.color == color:
+                piece = self.state[i, j]
+                if isinstance(piece, Piece) and piece.color == color:
                     pieces[piece.piece_code].append(piece)
         return pieces
 
@@ -141,9 +161,9 @@ class Board:
 
     def setup_board_state(self) -> np.ndarray:
         """Do the setup for the state of the board."""
-        return [[None for i in range(8)] for j in range(8)]
+        return BoardStateList([[Piece.EMPTY for i in range(8)] for j in range(8)])
 
-    def get_state_from_fen(self, fen: str) -> np.ndarray:
+    def get_state_from_fen(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
 
         Parameters
@@ -153,8 +173,10 @@ class Board:
 
         Returns
         -------
-        numpy.array(dtype="uint8")
-            A numpy array of unsigned 8 bit ints.
+        BoardStateList
+            A custom object which is the same as a list with
+            the exception that is made to check if the indexes
+            are in bound of the board.
 
         Raises
         ------
@@ -200,8 +222,7 @@ class Board:
             row = pos // 8
             col = pos - row * 8
 
-            self.state[row][col] = Board.make_piece(piece_code, (row, col))
-            # self.state[row][col] = piece_code
+            self.state[row, col] = Board.make_piece(piece_code, (row, col))
             pos += 1
 
         return self.state
@@ -224,9 +245,7 @@ class Board:
             # me to row/col pou exeis
             c = index % 8
             r = index - c
-            if c == _col:
-                return index
-            elif r != -1:
+            if c == _col or r != -1:
                 return index
         return -1
 
@@ -255,12 +274,14 @@ class Board:
     # FIXME Needs refactoring because of the new board representation.
     @staticmethod
     def find_tile_from_str(row: str, col: str) -> int:
+        """Find the tile given the row and col names."""
         _col: int = Board.get_number_for_col(col)
         _row: int = (8 - int(row))
         return (_row * 8) + _col
 
     @staticmethod
     def get_number_for_col(col: str) -> int:
+        """Get the corrisponding number based on the given col name."""
         if col == 'a':
             return 0
         elif col == 'b':
@@ -282,14 +303,13 @@ class Board:
 
     def __str__(self):
         """Print the board state."""
-        print('\t\t\t\t     BOARD')
-        print('      0     1     2     3     4     5     6     7')
+        print('\n      0     1     2     3     4     5     6     7')
         # x = 0
         # print(x, end='   ')
         for row in range(8):
             print()
             print(row, end='   ')
             for col in range(8):
-                piece = self.state[row][col]
-                print(f"[ {' ' if piece is None else piece.symbol} ]", end=' ')
+                piece = self.state[row, col]
+                print(f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
         return ' '

@@ -3,7 +3,7 @@ import pygame as py_g
 import numpy as np
 from typing import List
 from colorama import Fore
-from chess.board import Board
+from chess.board import Board, BoardStateList
 from itertools import chain
 from chess.pieces.piece import Piece
 
@@ -88,7 +88,7 @@ class Tile:
 class GameVisuals:
     """Visuals for the game."""
 
-    def __init__(self, game, board_state: List[List[Piece]]):
+    def __init__(self, game, board_state: BoardStateList):
         """Needs the same pygame module from the Game class.
 
         Parameters
@@ -331,9 +331,8 @@ class GameVisuals:
             The index and piece that occupies the tile.
         """
         row, col = (m_pos[1] // 100), (m_pos[0] // 100)
-        print(row, col)
-        piece = self.game.board.state[row][col]
-        piece_code = Piece.EMPTY if piece is None else piece.piece_code
+        piece = self.game.board.state[row, col]
+        piece_code = Piece.EMPTY if not isinstance(piece, Piece) else piece.piece_code
 
         if self.game.debug:
             print(m_pos, f"tile: [ {row}, {col} ]")
@@ -398,8 +397,8 @@ class GameVisuals:
                 tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
                 # index = Board.normalize_index(i)
-                if (board_state[i][j] is not None):
-                    image_path = Piece.get_img_for_piece(board_state[i][j].piece_code, IMGS_PATH)
+                if isinstance(board_state[i, j], Piece):
+                    image_path = Piece.get_img_for_piece(board_state[i, j].piece_code, IMGS_PATH)
                     # Draw pieces and add the piece to 'database'
                     img = py_g.image.load(image_path)
                     img = py_g.transform.scale(img, (100, 100))
