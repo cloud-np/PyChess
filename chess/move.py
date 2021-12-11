@@ -1,5 +1,5 @@
-from typing import Set
-from chess.board import Board
+from typing import Set, Tuple
+# from chess.board import Board
 
 
 def WRONG_INPUT(u_input, msg="Wrong move input:"):
@@ -36,6 +36,22 @@ class MoveTypes:
 
     MOVE_MASK = 0b00111
     ERROR_MASK = 0b11000
+
+
+class MoveDirection:
+    """An enum class that helps showing the direction of a move."""
+
+    # Horizontal directions
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
+
+    # Diagonal directions
+    UP_LEFT = 4
+    UP_RIGHT = 5
+    DOWN_LEFT = 6
+    DOWN_RIGHT = 7
 
 
 class Move:
@@ -100,7 +116,7 @@ class Move:
     # TODO A regex way should be way more readable but this works for now.
 
     @staticmethod
-    def decode_to_move(move_str: str, board: Board, is_white_turn: bool) -> 'Move':
+    def decode_to_move(move_str: str, board, is_white_turn: bool) -> 'Move':
         # Because of the case for e.g: "exf4"
         # we can't be sure if the piece is black or not
         piece_code = Piece.EMPTY
@@ -159,6 +175,62 @@ class Move:
             The new filtered set without the out of bounds tiles.
         """
         return moves - INVALID_TILES
+
+    # Horizontal directions ###############
+    @staticmethod
+    def up(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1]
+
+    @staticmethod
+    def down(coords, i) -> Tuple[int]:
+        """Return a move that has a direction downwards."""
+        return coords[0] + i, coords[1]
+
+    @staticmethod
+    def right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction right."""
+        return coords[0], coords[1] + i
+
+    @staticmethod
+    def left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction left."""
+        return coords[0], coords[1] - i
+
+    # Diagonal directions ###############
+    @staticmethod
+    def up_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] - i
+
+    @staticmethod
+    def up_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] + i
+
+    @staticmethod
+    def down_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] - i
+
+    @staticmethod
+    def down_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] + i
+
+    @staticmethod
+    def get_direction_func(direction: MoveDirection):
+        """Return the function that corrisponds to the move direction."""
+        return {
+            MoveDirection.UP: Move.up,
+            MoveDirection.DOWN: Move.down,
+            MoveDirection.LEFT: Move.left,
+            MoveDirection.RIGHT: Move.right,
+            MoveDirection.UP_LEFT: Move.up_left,
+            MoveDirection.UP_RIGHT: Move.up_right,
+            MoveDirection.DOWN_LEFT: Move.down_left,
+            MoveDirection.DOWN_RIGHT: Move.down_right
+        }[direction]
 
     # TODO check if this function works correctly.
     # Also make a direction enum or something.

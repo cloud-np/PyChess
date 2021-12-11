@@ -90,20 +90,11 @@ class Game:
         self.is_white_turn = not self.is_white_turn
         print(self.board)
 
-    def is_piece_pickable(self, piece_code: int) -> bool:
+    def is_piece_pickable(self, piece) -> bool:
         """Determine if you can pick a piece.
 
-        Parameters
-        ----------
-        piece_code : uint8
-            A binary way to represent our pieces
-
-        Returns
-        -------
-        bool
-            If the piece is on the same colour as the player
-            who is turn to play then the pick is pickable.
+        If the piece is on the same colour as the player
+        who is turn to play then the pick is pickable.
         """
-        # if not Piece.is_our_teams_turn(piece_code, self.is_white_turn):
-        #     return False
+        # return isinstance(piece, Piece) and piece.is_white == self.is_white_turn
         return True

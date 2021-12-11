@@ -1,5 +1,6 @@
 """Includes the class for each Pawn."""
 from chess.pieces.piece import Piece
+from chess.move import MoveDirection
 
 
 class Queen(Piece):
@@ -21,8 +22,13 @@ class Queen(Piece):
         coords : tuple
             The coordinates of the piece.
         """
+        self.range_limit = 8
         super().__init__(piece_code, coords)
 
-    def get_moves(self):
+    def get_moves(self, board_state):
         """Override the get_moves from Piece class."""
-        return 0
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,
+                   MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
+            self.add_moves_in_direction(board_state, moves, md)
+        return moves

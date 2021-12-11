@@ -279,11 +279,11 @@ class GameVisuals:
         bool
            Whether or not the picking action was successfull.
         """
-        piece_code, coords = self.tile_clicked(m_pos=m_pos)
+        piece, coords = self.tile_clicked(m_pos=m_pos)
 
         if self.picked_piece["coords"] == coords:
             return True
-        elif self.tiles[coords[0]][coords[1]].piece_img is not None and self.game.is_piece_pickable(piece_code):
+        elif self.tiles[coords[0]][coords[1]].piece_img is not None and self.game.is_piece_pickable(piece):
 
             self.change_cursor("diamond")
             self.set_picked_piece(coords)
@@ -332,11 +332,10 @@ class GameVisuals:
         """
         row, col = (m_pos[1] // 100), (m_pos[0] // 100)
         piece = self.game.board.state[row, col]
-        piece_code = Piece.EMPTY if not isinstance(piece, Piece) else piece.piece_code
 
         if self.game.debug:
             print(m_pos, f"tile: [ {row}, {col} ]")
-        return piece_code, (row, col)
+        return piece, (row, col)
 
     @staticmethod
     def check_for_events():

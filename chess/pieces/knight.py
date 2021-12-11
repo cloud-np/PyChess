@@ -23,7 +23,7 @@ class Knight(Piece):
         """
         super().__init__(piece_code, coords)
 
-    def get_moves(self, board_state):
+    def get_moves(self, board_state):  # sourcery skip: merge-duplicate-blocks
         """Override the get_moves from Piece class."""
         # We could be 'fancy' and use permutation but it generates 4 more cases
         # which we do not need and it would take couple ifs to get rid of them.
