@@ -22,13 +22,30 @@ class King(Piece):
         coords : tuple
             The coordinates of the piece.
         """
-        self.in_check = False
         self.range_limit = 2
+        self.enemy_color = Piece.BLACK if Piece.get_colour(piece_code) == Piece.WHITE else Piece.WHITE
         super().__init__(piece_code, coords)
 
-    def in_check(self, enemy_pieces):
+    def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
-        return self.in_check
+        # Check if the king is in check from the rest of the pieces
+        print(len(enemies_pieces[Piece.PAWN | self.enemy_color]))
+        for piece_code, enemy_list in enemies_pieces.items():
+            if piece_code == Piece.PAWN | self.enemy_color:
+                continue
+            for en in enemy_list:
+                moves = en.get_moves(board_state)
+
+            if self.coords in moves:
+                return True
+
+        # Check if the king is in check from pawns
+        pawns = enemies_pieces[Piece.PAWN | self.enemy_color]
+        for pawn in pawns:
+            moves = pawn.get_attack_moves(board_state)
+            if self.coords in moves:
+                return True
+        return False
 
     def get_moves(self, board_state):
         """Override the get_moves from Piece class."""

@@ -139,11 +139,11 @@ class Board:
         pc : int
             Piece code that describes the piece type and color.
         """
-        Constructor = Board.piece_classes(piece_code)
-        return Constructor(piece_code, coords)
+        PieceConstructor = Board.piece_classes(piece_code)
+        return PieceConstructor(piece_code, coords)
 
     @staticmethod
-    def piece_classes(piece_code: int) -> Callable:
+    def piece_classes(piece_code: int) -> dict:
         """Map in a dictionary all the functions for the pieces.
 
         Returns

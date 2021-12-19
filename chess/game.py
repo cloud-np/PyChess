@@ -56,6 +56,7 @@ class Game:
         """
         piece = self.board.state[start_coords]
         moves = piece.get_moves(self.board.state)
+        print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
 
         # possible_moves = Move.remove_off_bounds_tiles(moves)

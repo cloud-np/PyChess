@@ -23,6 +23,19 @@ class Pawn(Piece):
         """
         super().__init__(piece_code, coords)
 
+    def get_attack_moves(self, board_state, moves=None):
+        """Get the attackable coords for the pawn."""
+        if moves is None:
+            moves = set()
+        left_enemy = board_state[self.coords[0] + 1, self.coords[1] - 1]
+        right_enemy = board_state[self.coords[0] + 1, self.coords[1] + 1]
+
+        if isinstance(left_enemy, Piece) and left_enemy.color != self.color:
+            moves.add(left_enemy.coords)
+        if isinstance(right_enemy, Piece) and right_enemy.color != self.color:
+            moves.add(right_enemy.coords)
+        return moves
+
     def get_moves(self, board_state):
         """Override the get_moves from Piece class."""
         moves = set()
@@ -31,20 +44,10 @@ class Pawn(Piece):
                 moves.add((self.coords[0] - 1, self.coords[1]))
             if self.coords[0] == 6:
                 moves.add((self.coords[0] - 2, self.coords[1]))
-
-            left_enemy = board_state[self.coords[0] - 1, self.coords[1] - 1]
-            right_enemy = board_state[self.coords[0] - 1, self.coords[1] + 1]
         else:
             if self.coords[0] <= 6:
                 moves.add((self.coords[0] + 1, self.coords[1]))
             if self.coords[0] == 1:
                 moves.add((self.coords[0] + 2, self.coords[1]))
-
-            left_enemy = board_state[self.coords[0] + 1, self.coords[1] - 1]
-            right_enemy = board_state[self.coords[0] + 1, self.coords[1] + 1]
-
-        if isinstance(left_enemy, Piece) and left_enemy.color != self.color:
-            moves.add(left_enemy.coords)
-        if isinstance(right_enemy, Piece) and right_enemy.color != self.color:
-            moves.add(right_enemy.coords)
+        self.get_attack_moves(board_state, moves)
         return moves
