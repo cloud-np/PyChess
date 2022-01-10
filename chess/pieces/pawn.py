@@ -27,8 +27,13 @@ class Pawn(Piece):
         """Get the attackable coords for the pawn."""
         if moves is None:
             moves = set()
-        left_enemy = board_state[self.coords[0] + 1, self.coords[1] - 1]
-        right_enemy = board_state[self.coords[0] + 1, self.coords[1] + 1]
+
+        if self.color == Piece.WHITE:
+            left_enemy = board_state[self.coords[0] - 1, self.coords[1] - 1]
+            right_enemy = board_state[self.coords[0] - 1, self.coords[1] + 1]
+        else:
+            left_enemy = board_state[self.coords[0] + 1, self.coords[1] - 1]
+            right_enemy = board_state[self.coords[0] + 1, self.coords[1] + 1]
 
         if isinstance(left_enemy, Piece) and left_enemy.color != self.color:
             moves.add(left_enemy.coords)

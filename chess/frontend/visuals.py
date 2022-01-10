@@ -1,9 +1,8 @@
 """Creates the visuals for the game."""
 import pygame as py_g
-import numpy as np
 from typing import List
 from colorama import Fore
-from chess.board import Board, BoardStateList
+from chess.board import BoardStateList
 from itertools import chain
 from chess.pieces.piece import Piece
 

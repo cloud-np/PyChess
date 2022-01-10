@@ -28,23 +28,26 @@ class King(Piece):
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
-        # Check if the king is in check from the rest of the pieces
         print(len(enemies_pieces[Piece.PAWN | self.enemy_color]))
+
+        # Check if the king is in check from the rest of the pieces
+        enemy_moves = set()
         for piece_code, enemy_list in enemies_pieces.items():
             if piece_code == Piece.PAWN | self.enemy_color:
                 continue
             for en in enemy_list:
-                moves = en.get_moves(board_state)
+                enemy_moves = enemy_moves | en.get_moves(board_state)
 
-            if self.coords in moves:
+            if self.coords in enemy_moves:
                 return True
 
         # Check if the king is in check from pawns
-        pawns = enemies_pieces[Piece.PAWN | self.enemy_color]
-        for pawn in pawns:
-            moves = pawn.get_attack_moves(board_state)
-            if self.coords in moves:
+        enemy_pawns = enemies_pieces[Piece.PAWN | self.enemy_color]
+        for en_pawn in enemy_pawns:
+            enemy_moves = enemy_moves | en_pawn.get_attack_moves(board_state)
+            if self.coords in enemy_moves:
                 return True
+
         return False
 
     def get_moves(self, board_state):

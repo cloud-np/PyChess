@@ -3,7 +3,6 @@ from uuid import uuid4
 from uuid import UUID
 
 from chess.board import Board
-from chess.move import Move
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.frontend.visuals import GameVisuals
@@ -56,6 +55,13 @@ class Game:
         """
         piece = self.board.state[start_coords]
         moves = piece.get_moves(self.board.state)
+        # For each simulated move, if the king is in check, then the move is invalid.
+
+        # sim_state = self.board.simulated_board_state()
+        # sim_state[end_coords] = sim_state[start_coords]
+        # for move in moves:
+        #     sim_state = self.board.simulated_board_state()
+        #     sim_state_copy = sim_state.copy()
         print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
 

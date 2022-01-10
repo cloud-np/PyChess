@@ -1,6 +1,6 @@
 """board module contains all the classes and methods which are needed for a chessboard to be functional."""
 import numpy as np
-from typing import Callable, Any
+from typing import Any
 # import numpy.typing as npt
 from typing import Dict, List
 from chess.pieces.piece import Piece
@@ -63,6 +63,14 @@ class Board:
         self.b_pieces = self.organize_pieces(is_whites=False)
         self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
         print(self)
+
+    def simulated_board_state(self):
+        """Given a board state it will return a 'simulated' board state.
+
+        This will allows us to affect the board state without actually changing it.
+        """
+        # Slower but more compact
+        return BoardStateList([[-1 if self.state[i, j] == Piece.EMPTY else self.state[i, j].piece_code for i in range(8)] for j in range(8)])
 
     def get_piece_obj(self, coords: tuple, piece_code: int):
         """Get the piece obj.
