@@ -62,7 +62,8 @@ class Board:
         # Get Black Lists
         self.b_pieces = self.organize_pieces(is_whites=False)
         self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
-        print(self)
+        # print(self)
+        self.correct_format_print()
 
     def simulated_board_state(self):
         """Given a board state it will return a 'simulated' board state.
@@ -320,4 +321,17 @@ class Board:
             for col in range(8):
                 piece = self.state[row, col]
                 print(f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+        return ' '
+
+    def correct_format_print(self):
+        """Print the board state in correct format."""
+        # x = 0
+        # print(x, end='   ')
+        for row in range(8, 0, -1):
+            print()
+            print(row, end='   ')
+            for col in range(8, 0, -1):
+                piece = self.state[8 - row, 8 - col]
+                print(f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+        print('\n\n      a     b     c     d     e     f     g     h\n\n')
         return ' '

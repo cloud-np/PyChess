@@ -5,11 +5,12 @@ from uuid import UUID
 from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
+from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
 
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-STARTING_FEN = "rnbqkbnr/ppppp1pp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 # BOARD_SIZE = 64
 # VISUAL_BOARD_SIZE = 64
 
@@ -24,10 +25,30 @@ class Game:
         self.debug: bool = debug
         self.is_white_turn: bool = True
         self.board: Board = Board(STARTING_FEN)
+        self.running: bool = True
         # self.moves_history:
+        self.visuals: bool = visuals
         if visuals:
-            self.visuals: GameVisuals = GameVisuals(self, self.board.state)
-            self.visuals.main_loop()
+            GameVisuals(self, self.board.state).main_loop()
+        self.cli_loop()
+
+    def cli_loop(self):
+        """The main loop for the CLI."""
+        while self.running:
+            # Get the input.
+            input_str = input("Enter the start and end coords: ")
+            start_coords, end_coords = Move.parse_coords(input_str)
+            print(f'EP: {start_coords} --> {end_coords}')
+
+            # Check if the move is valid.
+            if self.is_player_move_valid(start_coords, end_coords):
+                self.register_move(start_coords, end_coords)
+            else:
+                print("Invalid move.")
+
+            # Check if the game is over.
+            # if self.is_game_over():
+            #     self.running = False
 
     def __str__(self) -> str:
         """Represent the current game and its info."""
@@ -95,7 +116,10 @@ class Game:
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
         self.is_white_turn = not self.is_white_turn
-        print(self.board)
+        if self.visuals is False:
+            self.board.correct_format_print()
+        else:
+            print(self.board)
 
     def is_piece_pickable(self, piece) -> bool:
         """Determine if you can pick a piece.
