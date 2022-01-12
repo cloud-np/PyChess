@@ -54,13 +54,13 @@ class Board:
         self.fen: str = fen
         self.state: BoardStateList = self.setup_board_state()
         # This assign does nothing here its just for readability.
-        self.get_state_from_fen(fen)
+        self.state, pieces = self.fen_to_state_and_pieces(fen)
 
         # Get White Lists
-        self.w_pieces = self.organize_pieces(is_whites=True)
+        self.w_pieces = self.organize_pieces(pieces, is_whites=True)
 
         # Get Black Lists
-        self.b_pieces = self.organize_pieces(is_whites=False)
+        self.b_pieces = self.organize_pieces(pieces, is_whites=False)
 
         # Kings
         self.kings = {Piece.WHITE: self.w_pieces[Piece.KING | Piece.WHITE][0],
@@ -87,6 +87,11 @@ class Board:
         """
         # Slower but more compact
         return BoardStateList([[-1 if self.state[i, j] == Piece.EMPTY else self.state[i, j].piece_code for i in range(8)] for j in range(8)])
+
+    def get_piece(self, coords: tuple) -> Piece:
+        """Given a coords it will return the piece that is there."""
+        piece_code = self.state[coords]
+        return self.get_piece_obj(coords, piece_code)
 
     def get_piece_obj(self, coords: tuple, piece_code: int):
         """Get the piece obj.
@@ -127,7 +132,7 @@ class Board:
         print(pieces)
         return pieces[0]
 
-    def organize_pieces(self, is_whites: bool) -> Dict[int, List[int]]:
+    def organize_pieces(self, all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
         """Given a team color it will return that team's pieces.
 
         Parameters
@@ -149,11 +154,9 @@ class Board:
                                         Piece.ROOK | color: list(),
                                         Piece.QUEEN | color: list()}
 
-        for i in range(8):
-            for j in range(8):
-                piece = self.state[i, j]
-                if isinstance(piece, Piece) and piece.color == color:
-                    pieces[piece.piece_code].append(piece)
+        for piece in all_pieces:
+            if isinstance(piece, Piece) and piece.color == color:
+                pieces[piece.piece_code].append(piece)
         return pieces
 
     @staticmethod
@@ -189,7 +192,7 @@ class Board:
         """Do the setup for the state of the board."""
         return BoardStateList([[Piece.EMPTY for i in range(8)] for j in range(8)])
 
-    def get_state_from_fen(self, fen: str) -> BoardStateList:
+    def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
 
         Parameters
@@ -212,7 +215,8 @@ class Board:
         # np.full((120), 32, dtype="uint8")
         # Adding the error bits should be done when creating the board obj.
         # The pos could start from 21 and stop at 98
-        pos = 0
+        pieces: list = []
+        pos: int = 0
         for ch in fen:
             if pos > 63:
                 raise ValueError(f"Exited board boundries: {pos}")
@@ -248,10 +252,11 @@ class Board:
             row = pos // 8
             col = pos - row * 8
 
-            self.state[row, col] = Board.make_piece(piece_code, (row, col))
+            pieces.append(Board.make_piece(piece_code, (row, col)))
+            self.state[row, col] = piece_code
             pos += 1
 
-        return self.state
+        return self.state, pieces
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:
@@ -336,9 +341,9 @@ class Board:
             print()
             print(row, end='   ')
             for col in range(8):
-                piece = self.state[row, col]
+                piece_code = self.state[row, col]
                 print(
-                    f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+                    f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
         return ' '
 
     def correct_format_print(self):
@@ -349,8 +354,8 @@ class Board:
             print()
             print(row, end='   ')
             for col in range(8, 0, -1):
-                piece = self.state[8 - row, 8 - col]
+                piece_code = self.state[8 - row, 8 - col]
                 print(
-                    f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+                    f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
         print('\n\n      a     b     c     d     e     f     g     h\n\n')
         return ' '

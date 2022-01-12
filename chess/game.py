@@ -113,7 +113,7 @@ class Game:
         bool
             Returns whether or not a move is valid.
         """
-        piece = self.board.state[start_coords]
+        piece = self.board.get_piece(start_coords)
         moves = piece.get_moves(self.board.state)
         # For each simulated move, if the king is in check, then the move is invalid.
 
@@ -122,7 +122,7 @@ class Game:
         # for move in moves:
         #     sim_state = self.board.simulated_board_state()
         #     sim_state_copy = sim_state.copy()
-        print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
+        # print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
 
         # possible_moves = Move.remove_off_bounds_tiles(moves)
@@ -145,9 +145,9 @@ class Game:
             The new coords of the piece.
         """
         # Update pieces.
-        moving_piece = self.board.state[old_coords]
+        moving_piece = self.board.get_piece(old_coords)
         moving_piece.set_coords(new_coords)
-        taken_piece = self.board.state[new_coords]
+        taken_piece = self.board.get_piece(new_coords)
         if isinstance(taken_piece, Piece):
             self.board.kill_piece(taken_piece)
 

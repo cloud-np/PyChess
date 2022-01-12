@@ -85,21 +85,14 @@ class Piece:
         direction_func = Move.get_direction_func(direction)
         for i in range(1, self.range_limit):
             move: tuple[int] = direction_func(self.coords, i)
-            piece = board_state[move]
-            if piece == Piece.EMPTY:
+            piece_code = board_state[move]
+            color = Piece.get_colour(piece_code)
+            if piece_code == Piece.EMPTY:
                 moves.add(move)
-            elif piece == Piece.INVALID:
-                break
-
-            if isinstance(piece, Piece):
-                if piece.color != self.color:
-                    moves.add(piece.coords)
+            elif piece_code == Piece.INVALID or color == self.color:
                 break
             else:
-                # NOTE: The piece may not be a piece at all!! It can be piece_code.
-                #       I should swap everything again to piece_codes or something...
-                if Piece.get_colour(piece) != self.color:
-                    moves.add(move)
+                moves.add(move)
                 break
 
     # def is_piece_and_same_color(self, o_piece) -> tuple[bool]:
@@ -200,6 +193,8 @@ class Piece:
         str
             The path of the piece img.
         """
+        if piece_code == Piece.EMPTY:
+            return ''
         path = f"{imgs_path}/"
         color = Piece.get_colour(piece_code)
         ptype = Piece.get_type(piece_code)

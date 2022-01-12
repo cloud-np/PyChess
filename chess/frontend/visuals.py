@@ -134,7 +134,7 @@ class GameVisuals:
 
     def draw_indexes(self, normalised=False) -> None:
         """Show the index number of the tile on screen."""
-        for i, tile in enumerate(self.tiles):
+        for i, tile in enumerate(chain.from_iterable(zip(*self.tiles))):
             tile.text_surface = self.font.render(f"{tile.coords if normalised is False else i}", False, (0, 0, 0))
             self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
@@ -367,12 +367,12 @@ class GameVisuals:
             #     history['player'] += 1
         return EventType.NO_EVENT
 
-    def occupie_tiles(self, board_state: List[List[Piece]]):
+    def occupie_tiles(self, board_state: List[List[int]]):
         """Make the visual tiles for the board.
 
         Parameters
         ----------
-        board_state : List[List[Piece]]
+        board_state : List[List[int]]
             Holds the information for every piece on board.
         """
         x_pos = 0
@@ -394,9 +394,9 @@ class GameVisuals:
                 colour = not colour
                 tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
-                # index = Board.normalize_index(i)
-                if isinstance(board_state[i, j], Piece):
-                    image_path = Piece.get_img_for_piece(board_state[i, j].piece_code, IMGS_PATH)
+                image_path = Piece.get_img_for_piece(board_state[i, j], IMGS_PATH)
+                # In case its an empty tile
+                if len(image_path) != 0:
                     # Draw pieces and add the piece to 'database'
                     img = py_g.image.load(image_path)
                     img = py_g.transform.scale(img, (100, 100))
