@@ -29,18 +29,30 @@ class Pawn(Piece):
             moves = set()
 
         if self.color == Piece.WHITE:
-            left_enemy = board_state[self.coords[0] - 1, self.coords[1] - 1]
-            right_enemy = board_state[self.coords[0] - 1, self.coords[1] + 1]
+            l_coords = self.coords[0] - 1, self.coords[1] - 1
+            r_coords = self.coords[0] - 1, self.coords[1] + 1
+            left_enemy = board_state[l_coords]
+            right_enemy = board_state[r_coords]
         else:
-            left_enemy = board_state[self.coords[0] + 1, self.coords[1] - 1]
-            right_enemy = board_state[self.coords[0] + 1, self.coords[1] + 1]
+            l_coords = self.coords[0] + 1, self.coords[1] - 1
+            r_coords = self.coords[0] + 1, self.coords[1] + 1
+            left_enemy = board_state[l_coords]
+            right_enemy = board_state[r_coords]
 
+        # Left enemy
         if isinstance(left_enemy, Piece) and left_enemy.color != self.color:
             moves.add(left_enemy.coords)
+        elif Piece.get_colour(left_enemy) != self.color:
+            moves.add(l_coords)
+
+        # Right enemy
         if isinstance(right_enemy, Piece) and right_enemy.color != self.color:
             moves.add(right_enemy.coords)
+        elif Piece.get_colour(right_enemy) != self.color:
+            moves.add(r_coords)
         return moves
 
+    # FIXME: Stop when a piece is in the way.
     def get_moves(self, board_state):
         """Override the get_moves from Piece class."""
         moves = set()

@@ -42,6 +42,18 @@ class Piece:
         self.ptype: int = Piece.get_type(piece_code)
         self.symbol: int = Piece.get_symbol(piece_code)
         self.coords: tuple = coords
+        self.is_dead: bool = False
+        self.simulated: dict = {'is_simulated': False, 'og_coords': coords}
+
+    def unsimulate_move(self, end_coords):
+        """Simulate the piece."""
+        self.simulated['is_simulated'] = False
+        self.coords = self.simulated['og_coords']
+
+    def simulate_move(self, end_coords):
+        """Simulate the piece."""
+        self.simulated['is_simulated'] = True
+        self.coords = end_coords
 
     def __eq__(self, other: 'Piece'):
         """Overload the == when it is applied on two Piece classes to check if they are equal based on their coords and piececode."""
@@ -50,7 +62,7 @@ class Piece:
         return self.__key() == other.__key()
 
     def __key(self):
-        return tuple(self.piece_code, *self.coords)
+        return tuple((self.piece_code, *self.coords))
 
     def add_moves_in_direction(self, board_state, moves: Set[Tuple[int]], direction: MoveDirection) -> None:
         """Found the all moves based of the 'direction' a direction.
@@ -78,9 +90,16 @@ class Piece:
                 moves.add(move)
             elif piece == Piece.INVALID:
                 break
-            elif isinstance(piece, Piece):
+
+            if isinstance(piece, Piece):
                 if piece.color != self.color:
                     moves.add(piece.coords)
+                break
+            else:
+                # NOTE: The piece may not be a piece at all!! It can be piece_code.
+                #       I should swap everything again to piece_codes or something...
+                if Piece.get_colour(piece) != self.color:
+                    moves.add(move)
                 break
 
     # def is_piece_and_same_color(self, o_piece) -> tuple[bool]:

@@ -53,17 +53,32 @@ class Board:
         """
         self.fen: str = fen
         self.state: BoardStateList = self.setup_board_state()
-        self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
+        # This assign does nothing here its just for readability.
+        self.get_state_from_fen(fen)
 
         # Get White Lists
         self.w_pieces = self.organize_pieces(is_whites=True)
-        self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
 
         # Get Black Lists
         self.b_pieces = self.organize_pieces(is_whites=False)
-        self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
+
+        # Kings
+        self.kings = {Piece.WHITE: self.w_pieces[Piece.KING | Piece.WHITE][0],
+                      Piece.BLACK: self.b_pieces[Piece.KING | Piece.BLACK][0]}
+
+        self.dead_pieces: List[Piece] = []
         # print(self)
         self.correct_format_print()
+
+    def kill_piece(self, dead_piece: Piece):
+        self.dead_pieces.append(dead_piece)
+        dead_piece.is_dead = True
+
+        # Remove the dead piece from the piece lists
+        if dead_piece.color == Piece.WHITE:
+            self.w_pieces[dead_piece.piece_code].remove(dead_piece)
+        else:
+            self.b_pieces[dead_piece.piece_code].remove(dead_piece)
 
     def simulated_board_state(self):
         """Given a board state it will return a 'simulated' board state.
@@ -101,9 +116,11 @@ class Board:
 
         color = Piece.get_colour(piece_code)
         if color == Piece.WHITE:
-            pieces = [piece for piece in self.w_pieces[piece_code] if piece.coords == coords and piece.piece_code == piece_code]
+            pieces = [piece for piece in self.w_pieces[piece_code]
+                      if piece.coords == coords and piece.piece_code == piece_code]
         else:
-            pieces = [piece for piece in self.b_pieces[piece_code] if piece.coords == coords and piece.piece_code == piece_code]
+            pieces = [piece for piece in self.b_pieces[piece_code]
+                      if piece.coords == coords and piece.piece_code == piece_code]
 
         if len(pieces) > 1 or not pieces:
             raise Exception("Found the same piece obj twice!")
@@ -320,7 +337,8 @@ class Board:
             print(row, end='   ')
             for col in range(8):
                 piece = self.state[row, col]
-                print(f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+                print(
+                    f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
         return ' '
 
     def correct_format_print(self):
@@ -332,6 +350,7 @@ class Board:
             print(row, end='   ')
             for col in range(8, 0, -1):
                 piece = self.state[8 - row, 8 - col]
-                print(f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
+                print(
+                    f"[ {' ' if not isinstance(piece, Piece) else piece.symbol} ]", end=' ')
         print('\n\n      a     b     c     d     e     f     g     h\n\n')
         return ' '

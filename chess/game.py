@@ -38,10 +38,10 @@ class Game:
             # Get the input.
             input_str = input("Enter the start and end coords: ")
             start_coords, end_coords = Move.parse_coords(input_str)
-            print(f'EP: {start_coords} --> {end_coords}')
 
             # Check if the move is valid.
-            if self.is_player_move_valid(start_coords, end_coords):
+            # if self.is_player_move_valid(start_coords, end_coords):
+            if self.is_move_valid(start_coords, end_coords):
                 self.register_move(start_coords, end_coords)
             else:
                 print("Invalid move.")
@@ -55,6 +55,45 @@ class Game:
         return (
             f"Created: " f"{self.time_created.strftime('%d/%m/%Y %H:%M:%S')} {self.id}"
         )
+
+    def is_move_valid(self, start_coords: int, end_coords: int) -> bool:
+        piece = self.board.state[start_coords]
+        # print('MOVED PIECE: ', piece)
+        moves = piece.get_moves(self.board.state)
+
+        # For each simulated move, if the king is in check, then the move is invalid.
+        sim_state = self.board.simulated_board_state()
+        sim_state_copy = sim_state.copy()
+        illegal_moves = set()
+        for move in moves:
+            sim_state_copy[move] = piece.piece_code
+            sim_state_copy[piece.coords] = Piece.EMPTY
+            piece.simulate_move(move)
+            king = self.board.kings[piece.color]
+
+            is_king_in_check = king.in_check(self.board.b_pieces, sim_state_copy)
+            # unsimulate_move(move)
+            piece.unsimulate_move(move)
+
+            if is_king_in_check:
+                illegal_moves.add(move)
+                # print("YOU ARE IN CHECK!")
+                # return False
+
+        # Remove the illegal moves
+        moves = moves - illegal_moves
+
+        print("Is white king in check: ", self.board.w_king.in_check(self.board.b_pieces, self.board.state))
+        # moves = Piece.get_moveset(start_tile, piece_code)
+
+        # possible_moves = Move.remove_off_bounds_tiles(moves)
+
+        print(f"{piece.symbol}: {start_coords} --> {end_coords}")
+        # print(f"moves: {moves}")
+        return end_coords in moves
+
+    def simulate_move(self, start_coords: int, end_coords: int) -> None:
+        ...
 
     def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
         """Return whether or not the player move is valid.
@@ -110,7 +149,7 @@ class Game:
         moving_piece.set_coords(new_coords)
         taken_piece = self.board.state[new_coords]
         if isinstance(taken_piece, Piece):
-            del taken_piece
+            self.board.kill_piece(taken_piece)
 
         # Update board state.
         self.board.state[new_coords] = self.board.state[old_coords]
