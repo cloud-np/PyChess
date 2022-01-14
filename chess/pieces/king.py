@@ -28,7 +28,6 @@ class King(Piece):
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
-        print(len(enemies_pieces[Piece.PAWN | self.enemy_color]))
 
         # Check if the king is in check from the rest of the pieces
         enemy_moves = set()

@@ -57,33 +57,33 @@ class Game:
         )
 
     def is_move_valid(self, start_coords: int, end_coords: int) -> bool:
-        piece = self.board.state[start_coords]
+        piece = self.board.get_piece(start_coords)
+        if piece == Piece.EMPTY:
+            return False
         # print('MOVED PIECE: ', piece)
         moves = piece.get_moves(self.board.state)
 
         # For each simulated move, if the king is in check, then the move is invalid.
         sim_state = self.board.simulated_board_state()
-        sim_state_copy = sim_state.copy()
         illegal_moves = set()
         for move in moves:
-            sim_state_copy[move] = piece.piece_code
-            sim_state_copy[piece.coords] = Piece.EMPTY
-            piece.simulate_move(move)
+            self.simulate_move(sim_state, start_coords=start_coords,
+                               end_coords=move, piece_code=piece.piece_code)
+
             king = self.board.kings[piece.color]
-
-            is_king_in_check = king.in_check(self.board.b_pieces, sim_state_copy)
-            # unsimulate_move(move)
-            piece.unsimulate_move(move)
-
+            enemy_pieces = self.board.b_pieces if piece.color == Piece.WHITE else self.board.w_pieces
+            is_king_in_check = king.in_check(enemy_pieces, sim_state)
             if is_king_in_check:
                 illegal_moves.add(move)
-                # print("YOU ARE IN CHECK!")
-                # return False
+
+            # Simpliest thing to do simulate back what you simulated above.
+            self.simulate_move(sim_state, start_coords=move,
+                               end_coords=start_coords, piece_code=piece.piece_code)
 
         # Remove the illegal moves
         moves = moves - illegal_moves
 
-        print("Is white king in check: ", self.board.w_king.in_check(self.board.b_pieces, self.board.state))
+        # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
 
         # possible_moves = Move.remove_off_bounds_tiles(moves)
@@ -92,44 +92,47 @@ class Game:
         # print(f"moves: {moves}")
         return end_coords in moves
 
-    def simulate_move(self, start_coords: int, end_coords: int) -> None:
-        ...
+    def simulate_move(self, sim_state, start_coords: int, end_coords: int, piece_code: int) -> None:
+        sim_state[end_coords] = piece_code
+        sim_state[start_coords] = Piece.EMPTY
 
-    def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
-        """Return whether or not the player move is valid.
+    # def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
+    #     """Return whether or not the player move is valid.
 
-        We take for granted that the given input is correct and the
-        starting tile does have the correct piece code.
+    #     We take for granted that the given input is correct and the
+    #     starting tile does have the correct piece code.
 
-        Parameters
-        ----------
-        start_tile : int
-            Starting coords of the piece.
-        end_tile : int
-            Ending coords of the piece.
+    #     Parameters
+    #     ----------
+    #     start_tile : int
+    #         Starting coords of the piece.
+    #     end_tile : int
+    #         Ending coords of the piece.
 
-        Returns
-        -------
-        bool
-            Returns whether or not a move is valid.
-        """
-        piece = self.board.get_piece(start_coords)
-        moves = piece.get_moves(self.board.state)
-        # For each simulated move, if the king is in check, then the move is invalid.
+    #     Returns
+    #     -------
+    #     bool
+    #         Returns whether or not a move is valid.
+    #     """
+    #     piece = self.board.get_piece(start_coords)
+    #     if piece == Piece.EMPTY:
+    #         return False
+    #     moves = piece.get_moves(self.board.state)
+    #     # For each simulated move, if the king is in check, then the move is invalid.
 
-        # sim_state = self.board.simulated_board_state()
-        # sim_state[end_coords] = sim_state[start_coords]
-        # for move in moves:
-        #     sim_state = self.board.simulated_board_state()
-        #     sim_state_copy = sim_state.copy()
-        # print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
-        # moves = Piece.get_moveset(start_tile, piece_code)
+    #     # sim_state = self.board.simulated_board_state()
+    #     # sim_state[end_coords] = sim_state[start_coords]
+    #     # for move in moves:
+    #     #     sim_state = self.board.simulated_board_state()
+    #     #     sim_state_copy = sim_state.copy()
+    #     # print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
+    #     # moves = Piece.get_moveset(start_tile, piece_code)
 
-        # possible_moves = Move.remove_off_bounds_tiles(moves)
+    #     # possible_moves = Move.remove_off_bounds_tiles(moves)
 
-        print(f"{piece.symbol}: {start_coords} --> {end_coords}")
-        print(f"moves: {moves}")
-        return end_coords in moves
+    #     print(f"{piece.symbol}: {start_coords} --> {end_coords}")
+    #     print(f"moves: {moves}")
+    #     return end_coords in moves
 
     def register_move(self, old_coords: tuple, new_coords: tuple):
         """Register the a move.
@@ -146,14 +149,19 @@ class Game:
         """
         # Update pieces.
         moving_piece = self.board.get_piece(old_coords)
-        moving_piece.set_coords(new_coords)
         taken_piece = self.board.get_piece(new_coords)
+
+        # Update pieces
+        moving_piece.set_coords(new_coords)
         if isinstance(taken_piece, Piece):
             self.board.kill_piece(taken_piece)
+            # NOTE: This needs to look into
+            taken_piece.set_coords((-1, -1))
 
         # Update board state.
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
+
         self.is_white_turn = not self.is_white_turn
         if self.visuals is False:
             self.board.correct_format_print()

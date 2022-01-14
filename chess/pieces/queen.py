@@ -31,4 +31,5 @@ class Queen(Piece):
         for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,
                    MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
             self.add_moves_in_direction(board_state, moves, md)
+        print(f'{self}    {moves}')
         return moves

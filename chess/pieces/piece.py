@@ -43,17 +43,17 @@ class Piece:
         self.symbol: int = Piece.get_symbol(piece_code)
         self.coords: tuple = coords
         self.is_dead: bool = False
-        self.simulated: dict = {'is_simulated': False, 'og_coords': coords}
+    #     self.simulated: dict = {'is_simulated': False, 'og_coords': coords}
 
-    def unsimulate_move(self, end_coords):
-        """Simulate the piece."""
-        self.simulated['is_simulated'] = False
-        self.coords = self.simulated['og_coords']
+    # def unsimulate_move(self, end_coords):
+    #     """Simulate the piece."""
+    #     self.simulated['is_simulated'] = False
+    #     self.coords = self.simulated['og_coords']
 
-    def simulate_move(self, end_coords):
-        """Simulate the piece."""
-        self.simulated['is_simulated'] = True
-        self.coords = end_coords
+    # def simulate_move(self, end_coords):
+    #     """Simulate the piece."""
+    #     self.simulated['is_simulated'] = True
+    #     self.coords = end_coords
 
     def __eq__(self, other: 'Piece'):
         """Overload the == when it is applied on two Piece classes to check if they are equal based on their coords and piececode."""
@@ -91,7 +91,7 @@ class Piece:
                 moves.add(move)
             elif piece_code == Piece.INVALID or color == self.color:
                 break
-            else:
+            elif color != self.color:
                 moves.add(move)
                 break
 

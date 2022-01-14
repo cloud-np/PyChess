@@ -37,12 +37,12 @@ class Pawn(Piece):
 
         # Left enemy
         left_enemy = board_state[l_coords]
-        if Piece.get_colour(left_enemy) != self.color:
+        if left_enemy != Piece.EMPTY and Piece.get_colour(left_enemy) != self.color:
             moves.add(l_coords)
 
         # Right enemy
         right_enemy = board_state[r_coords]
-        if Piece.get_colour(right_enemy) != self.color:
+        if right_enemy != Piece.EMPTY and Piece.get_colour(right_enemy) != self.color:
             moves.add(r_coords)
 
         return moves

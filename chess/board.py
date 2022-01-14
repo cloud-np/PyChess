@@ -86,7 +86,7 @@ class Board:
         This will allows us to affect the board state without actually changing it.
         """
         # Slower but more compact
-        return BoardStateList([[-1 if self.state[i, j] == Piece.EMPTY else self.state[i, j].piece_code for i in range(8)] for j in range(8)])
+        return BoardStateList([[self.state[i, j] for i in range(8)] for j in range(8)])
 
     def get_piece(self, coords: tuple) -> Piece:
         """Given a coords it will return the piece that is there."""
@@ -129,7 +129,6 @@ class Board:
 
         if len(pieces) > 1 or not pieces:
             raise Exception("Found the same piece obj twice!")
-        print(pieces)
         return pieces[0]
 
     def organize_pieces(self, all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
