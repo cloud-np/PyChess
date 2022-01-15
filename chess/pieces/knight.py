@@ -39,8 +39,10 @@ class Knight(Piece):
         moves = set()
         for move in pos_moves:
             piece_code = board_state[move]
-            if Piece.get_colour(piece_code) != self.color:
+            # if piece_code == Piece.INVALID:
+            #     pass
+            if piece_code == Piece.EMPTY:
                 moves.add(move)
-            elif piece_code == Piece.EMPTY:
+            elif Piece.get_colour(piece_code) == self.enemy_color:
                 moves.add(move)
         return moves

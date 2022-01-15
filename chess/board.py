@@ -62,6 +62,9 @@ class Board:
         # Get Black Lists
         self.b_pieces = self.organize_pieces(pieces, is_whites=False)
 
+        self.all_pieces = {Piece.WHITE: self.w_pieces,
+                           Piece.BLACK: self.b_pieces}
+
         # Kings
         self.kings = {Piece.WHITE: self.w_pieces[Piece.KING | Piece.WHITE][0],
                       Piece.BLACK: self.b_pieces[Piece.KING | Piece.BLACK][0]}
@@ -86,7 +89,7 @@ class Board:
         This will allows us to affect the board state without actually changing it.
         """
         # Slower but more compact
-        return BoardStateList([[self.state[i, j] for i in range(8)] for j in range(8)])
+        return BoardStateList([[self.state[j, i] for i in range(8)] for j in range(8)])
 
     def get_piece(self, coords: tuple) -> Piece:
         """Given a coords it will return the piece that is there."""

@@ -34,11 +34,13 @@ class King(Piece):
         for piece_code, enemy_list in enemies_pieces.items():
             if piece_code == Piece.PAWN | self.enemy_color:
                 continue
-            for en in enemy_list:
-                enemy_moves = enemy_moves | en.get_moves(board_state)
 
-            if self.coords in enemy_moves:
-                return True
+            # NOTE: Keep track of the attacking direction of the enemy piece.
+            #       THERE MAY BE 2 DIRECTIONS OF ATTACKING.
+            for en in enemy_list:
+                enemy_moves = en.get_moves(board_state)
+                if self.coords in enemy_moves:
+                    return True
 
         # Check if the king is in check from pawns
         enemy_pawns = enemies_pieces[Piece.PAWN | self.enemy_color]

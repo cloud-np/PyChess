@@ -38,7 +38,7 @@ class Piece:
         """
         self.piece_code: int = piece_code
         self.color: int = Piece.get_colour(piece_code)
-        self.is_white = self.color == Piece.WHITE
+        self.enemy_color: int = Piece.get_enemy_colour(piece_code)
         self.ptype: int = Piece.get_type(piece_code)
         self.symbol: int = Piece.get_symbol(piece_code)
         self.coords: tuple = coords
@@ -63,6 +63,11 @@ class Piece:
 
     def __key(self):
         return tuple((self.piece_code, *self.coords))
+    
+    @staticmethod
+    def get_enemy_colour(piece_code):
+        color = Piece.get_colour(piece_code)
+        return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
 
     def add_moves_in_direction(self, board_state, moves: Set[Tuple[int]], direction: MoveDirection) -> None:
         """Found the all moves based of the 'direction' a direction.
