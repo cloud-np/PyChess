@@ -23,6 +23,7 @@ class Rook(Piece):
             The coordinates of the piece.
         """
         self.range_limit = 8
+        self.has_moved = False
         super().__init__(piece_code, coords)
 
     def get_moves(self, board_state):

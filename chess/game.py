@@ -33,7 +33,7 @@ class Game:
         self.cli_loop()
 
     def cli_loop(self):
-        """The main loop for the CLI."""
+        """Loop for the CLI."""
         while self.running:
             # Get the input.
             input_str = input("Enter the start and end coords: ")
@@ -77,28 +77,8 @@ class Game:
         # print('MOVED PIECE: ', piece)
         moves = piece.get_moves(self.board.state)
 
-        # For each simulated move, if the king is in check, then the move is invalid.
-        sim_state = self.board.simulated_board_state()
-        illegal_moves = set()
-
-        # NOTE: Make this a function e.g: get illegal moves.
-        #       and make a simulate_move decorator.
-        for move in moves:
-            self.simulate_move(sim_state, start_coords=start_coords,
-                               end_coords=move, piece=piece)
-
-            king = self.board.kings[piece.color]
-            enemy_pieces = self.board.all_pieces[piece.enemy_color]
-            is_king_in_check = king.in_check(enemy_pieces, sim_state)
-            if is_king_in_check:
-                illegal_moves.add(move)
-
-            # Simpliest thing to do simulate back what you simulated above.
-            self.simulate_move(sim_state, start_coords=move,
-                               end_coords=start_coords, piece=piece)
-
         # Remove the illegal moves
-        moves = moves - illegal_moves
+        moves = moves - self.get_illegal_moves(piece, start_coords, moves)
 
         # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
@@ -109,10 +89,66 @@ class Game:
         # print(f"moves: {moves}")
         return end_coords in moves
 
-    def simulate_move(self, sim_state, start_coords: int, end_coords: int, piece: Piece) -> None:
-        piece.set_coords(end_coords)
-        sim_state[end_coords] = piece.piece_code
-        sim_state[start_coords] = Piece.EMPTY
+    def get_illegal_moves(self, piece, start_coords, moves: set) -> set:
+        """Get the illegal moves.
+
+        Parameters
+        ----------
+        piece : Piece
+            The moving piece.
+        start_coords : tuple(int)
+            His starting pos.
+        moves : set
+            The possible moves.
+
+        Returns
+        -------
+        set
+            All the illegal moves
+        """
+        # For each simulated move, if the king is in check, then the move is invalid.
+        sim_state = self.board.simulated_board_state()
+        illegal_moves = set()
+
+        @Game.simulate_move
+        def __play_possibly_illegal_move(sim_state, start_coords, end_coords, piece):
+            king = self.board.kings[piece.color]
+            enemy_pieces = self.board.all_pieces[piece.enemy_color]
+            is_king_in_check = king.in_check(enemy_pieces, sim_state)
+            if is_king_in_check:
+                illegal_moves.add(end_coords)
+
+        for move in moves:
+            __play_possibly_illegal_move(sim_state, start_coords=start_coords, end_coords=move, piece=piece)
+        return illegal_moves
+
+    @staticmethod
+    def simulate_move(func):
+        """Simulate a move decorator.
+
+        If a given functions changes the board state by playing a move,
+        simple revert to its original state before the move.
+        Parameters
+        ----------
+        func : function
+            The function that should changes a board state.
+        """
+        def __sim_seq(sim_state, start_coords, end_coords, piece):
+            piece.set_coords(end_coords)
+            sim_state[end_coords] = piece.piece_code
+            sim_state[start_coords] = Piece.EMPTY
+
+        def __simulate_move(sim_state, start_coords: tuple, end_coords: tuple, piece: Piece) -> None:
+            __sim_seq(sim_state, piece=piece, start_coords=start_coords, end_coords=end_coords)
+            func(sim_state, start_coords, end_coords, piece)
+            # Simpliest thing to do simulate back what you simulated above.
+            __sim_seq(sim_state, piece=piece, end_coords=start_coords, start_coords=end_coords)
+        return __simulate_move
+
+    # def simulate_move(self, sim_state, start_coords: int, end_coords: int, piece: Piece) -> None:
+    #     piece.set_coords(end_coords)
+    #     sim_state[end_coords] = piece.piece_code
+    #     sim_state[start_coords] = Piece.EMPTY
 
     def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
         return self.is_move_valid(start_coords, end_coords)

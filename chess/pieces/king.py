@@ -24,11 +24,13 @@ class King(Piece):
         """
         self.range_limit = 2
         self.enemy_color = Piece.BLACK if Piece.get_colour(piece_code) == Piece.WHITE else Piece.WHITE
+        self.has_moved = False
+        self.l_rk = True
+        self.r_rk = True
         super().__init__(piece_code, coords)
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
-
         # Check if the king is in check from the rest of the pieces
         enemy_moves = set()
         for piece_code, enemy_list in enemies_pieces.items():
