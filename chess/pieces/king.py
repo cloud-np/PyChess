@@ -12,6 +12,11 @@ class King(Piece):
         The base class we inherit from.
     """
 
+    WK_R_CASTLE = [(7, 5), (7, 6)]
+    BK_R_CASTLE = [(0, 5), (0, 6)]
+    WK_L_CASTLE = [(7, 3), (7, 2), (7, 1)]
+    BK_L_CASTLE = [(0, 3), (0, 2), (0, 1)]
+
     def __init__(self, piece_code: int, coords: tuple):
         """Init the King.
 
@@ -23,11 +28,24 @@ class King(Piece):
             The coordinates of the piece.
         """
         self.range_limit = 2
-        self.enemy_color = Piece.BLACK if Piece.get_colour(piece_code) == Piece.WHITE else Piece.WHITE
+        piece_colour = Piece.get_colour(piece_code)
+        self.enemy_color = Piece.BLACK if piece_colour == Piece.WHITE else Piece.WHITE
         self.has_moved = False
-        self.l_rk = True
-        self.r_rk = True
+        self.l_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
+        self.r_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
+
+    def get_caslting_moves(self, board):
+        """Try adding the roke moves if they are valid."""
+        moves = set()
+        if self.has_moved:
+            return None
+        if self.r_castle['is_valid'] and not board.are_coords_under_attack(self.r_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.r_castle['coords_list']):
+            moves.add((7, 6) if self.enemy_color == Piece.BLACK else (0, 6))
+
+        if self.l_castle['is_valid'] and not board.are_coords_under_attack(self.l_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.l_castle['coords_list']):
+            moves.add((7, 2) if self.enemy_color == Piece.BLACK else (0, 2))
+        return moves
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""

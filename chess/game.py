@@ -5,6 +5,7 @@ from uuid import UUID
 from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
+from chess.pieces.king import King
 from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
@@ -74,8 +75,7 @@ class Game:
         piece = self.board.get_piece(start_coords)
         if piece == Piece.EMPTY:
             return False
-        # print('MOVED PIECE: ', piece)
-        moves = piece.get_moves(self.board.state)
+        moves = self.get_all_moves(piece, start_coords)
 
         # Remove the illegal moves
         moves = moves - self.get_illegal_moves(piece, start_coords, moves)
@@ -89,7 +89,18 @@ class Game:
         # print(f"moves: {moves}")
         return end_coords in moves
 
-    def get_illegal_moves(self, piece, start_coords, moves: set) -> set:
+    def get_all_moves(self, piece, start_coords):
+        """Get all the possible moves."""
+        # print('MOVED PIECE: ', piece)
+        moves = piece.get_moves(self.board.state)
+
+        if isinstance(piece, King):
+            castling_moves = piece.get_caslting_moves(self.board)
+            if castling_moves:
+                moves = moves | castling_moves
+        return moves
+
+    def get_illegal_moves(self, piece, start_coords, moves) -> set:
         """Get the illegal moves.
 
         Parameters
@@ -109,11 +120,11 @@ class Game:
         # For each simulated move, if the king is in check, then the move is invalid.
         sim_state = self.board.simulated_board_state()
         illegal_moves = set()
+        king = self.board.kings[piece.color]
+        enemy_pieces = self.board.all_pieces[piece.enemy_color]
 
         @Game.simulate_move
         def __play_possibly_illegal_move(sim_state, start_coords, end_coords, piece):
-            king = self.board.kings[piece.color]
-            enemy_pieces = self.board.all_pieces[piece.enemy_color]
             is_king_in_check = king.in_check(enemy_pieces, sim_state)
             if is_king_in_check:
                 illegal_moves.add(end_coords)

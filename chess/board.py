@@ -194,6 +194,31 @@ class Board:
         """Do the setup for the state of the board."""
         return BoardStateList([[Piece.EMPTY for i in range(8)] for j in range(8)])
 
+    def are_coords_under_attack(self, coords_list, enemy_color):
+        """Check if any of the given coords are being attacked.
+
+        Parameters
+        ----------
+        coords_list : List[Tuple[int, int]]
+            A list of coords to check if they are being attacked.
+        enemy_color : int
+            The color of the enemy pieces.
+        enemies_pieces : List[Piece]
+            The enemy pieces.
+
+        Returns
+        -------
+        bool
+            Returns true if any of the coords are being attacked.
+        """
+        # Check if the king is in check from the rest of the pieces
+        enemy_moves = Piece.get_enemy_moves(self.all_pieces[enemy_color], self.state)
+        return any(tuple(coords) in enemy_moves for coords in coords_list)
+
+    def are_coords_empty(self, coords_list):
+        """Check if ALL the given coords are empty."""
+        return all(self.state[coords] == Piece.EMPTY for coords in coords_list)
+
     def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
 

@@ -63,11 +63,24 @@ class Piece:
 
     def __key(self):
         return tuple((self.piece_code, *self.coords))
-    
+
     @staticmethod
     def get_enemy_colour(piece_code):
+        """Given a piece code return the enemy colour."""
         color = Piece.get_colour(piece_code)
         return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
+
+    @staticmethod
+    def get_enemy_moves(enemy_pieces, board_state):
+        """Get all the enemy moves."""
+        enemy_moves = set()
+        for piece_code, enemy_list in enemy_pieces.items():
+            for en in enemy_list:
+                if piece_code == Piece.PAWN:
+                    enemy_moves = enemy_moves | en.get_attacking_moves(board_state)
+                else:
+                    enemy_moves = enemy_moves | en.get_moves(board_state)
+        return enemy_moves
 
     def add_moves_in_direction(self, board_state, moves: Set[Tuple[int]], direction: MoveDirection) -> None:
         """Found the all moves based of the 'direction' a direction.
