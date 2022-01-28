@@ -5,7 +5,7 @@ from uuid import UUID
 from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
-from chess.pieces.king import King
+from chess.pieces.king import King, CastleSide
 from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
@@ -75,7 +75,12 @@ class Game:
         piece = self.board.get_piece(start_coords)
         if piece == Piece.EMPTY:
             return False
-        moves = self.get_all_moves(piece, start_coords)
+
+        moves = piece.get_moves(self.board.state)
+
+        # Get the castling moves if the playing piece was a King.
+        if isinstance(piece, King):
+            moves = moves | piece.get_caslting_moves(self.board)
 
         # Remove the illegal moves
         moves = moves - self.get_illegal_moves(piece, start_coords, moves)
@@ -87,8 +92,10 @@ class Game:
 
         print(f"{piece.symbol}: {start_coords} --> {end_coords}")
         # print(f"moves: {moves}")
+
         return end_coords in moves
 
+    # NOTE: Add en passant.
     def get_all_moves(self, piece, start_coords):
         """Get all the possible moves."""
         # print('MOVED PIECE: ', piece)
@@ -162,6 +169,7 @@ class Game:
     #     sim_state[start_coords] = Piece.EMPTY
 
     def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
+        """Check if the player move is valid."""
         return self.is_move_valid(start_coords, end_coords)
     #     """Return whether or not the player move is valid.
 
@@ -217,6 +225,13 @@ class Game:
         moving_piece = self.board.get_piece(old_coords)
         taken_piece = self.board.get_piece(new_coords)
 
+        castling_side = None
+        castling_info = None
+        if isinstance(moving_piece, King):
+            castling_side = King.castling_side(new_coords)
+            new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
+            castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
+
         # Update pieces
         moving_piece.set_coords(new_coords)
         if isinstance(taken_piece, Piece):
@@ -229,10 +244,45 @@ class Game:
         self.board.state[old_coords] = Piece.EMPTY
 
         self.is_white_turn = not self.is_white_turn
+
         if self.visuals is False:
             self.board.correct_format_print()
         else:
             print(self.board)
+        return castling_info
+
+    def get_caslting_rook_positions(self, castling_side: int) -> tuple:
+        """Return the positions of the rooks involved in a castling."""
+        if castling_side == CastleSide.WK_SIDE_R:
+            rook_castle_coords = (7, 5)
+            rook_coords = (7, 7)
+        elif castling_side == CastleSide.WK_SIDE_L:
+            rook_castle_coords = (7, 3)
+            rook_coords = (7, 0)
+        elif castling_side == CastleSide.BK_SIDE_R:
+            rook_castle_coords = (0, 5)
+            rook_coords = (0, 7)
+        elif castling_side == CastleSide.BK_SIDE_L:
+            rook_castle_coords = (0, 3)
+            rook_coords = (0, 0)
+        else:
+            raise ValueError("Invalid castling side.")
+        return rook_castle_coords, rook_coords
+
+    def __update_rooks_castle_pos(self, castling_side: int):
+        """Update the rook's position based on the castling side.
+
+        Parameters
+        ----------
+        castling_side : int
+            Change the board state based on the castling side.
+        """
+        new_rook_coords, rook_coords = self.get_caslting_rook_positions(castling_side)
+        # Change the coords of the rook and the board state.
+        self.board.get_piece(rook_coords).set_coords(new_rook_coords)
+        self.board.state[new_rook_coords] = self.board.state[rook_coords]
+        self.board.state[rook_coords] = Piece.EMPTY
+        return new_rook_coords, rook_coords
 
     def is_piece_pickable(self, piece) -> bool:
         """Determine if you can pick a piece.

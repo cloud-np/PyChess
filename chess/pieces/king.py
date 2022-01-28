@@ -3,6 +3,15 @@ from chess.pieces.piece import Piece
 from chess.move import MoveDirection
 
 
+class CastleSide:
+    """Represents a side of a castle."""
+
+    WK_SIDE_L = 0
+    WK_SIDE_R = 1
+    BK_SIDE_L = 2
+    BK_SIDE_R = 3
+
+
 class King(Piece):
     """Has specific functions tied to a King obj.
 
@@ -31,8 +40,8 @@ class King(Piece):
         piece_colour = Piece.get_colour(piece_code)
         self.enemy_color = Piece.BLACK if piece_colour == Piece.WHITE else Piece.WHITE
         self.has_moved = False
-        self.l_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
-        self.r_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
+        self.r_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
+        self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
 
     def get_caslting_moves(self, board):
@@ -46,6 +55,19 @@ class King(Piece):
         if self.l_castle['is_valid'] and not board.are_coords_under_attack(self.l_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.l_castle['coords_list']):
             moves.add((7, 2) if self.enemy_color == Piece.BLACK else (0, 2))
         return moves
+
+    @staticmethod
+    def castling_side(end_coords):
+        """Return the side of the castle.
+
+        We use .get() to avoid KeyErrors.
+        """
+        return {
+            (7, 6): CastleSide.WK_SIDE_R,
+            (7, 2): CastleSide.WK_SIDE_L,
+            (0, 6): CastleSide.BK_SIDE_R,
+            (0, 2): CastleSide.BK_SIDE_L
+        }.get(end_coords)
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
