@@ -248,9 +248,9 @@ class GameVisuals:
             return True
         elif self.game.is_player_move_valid(self.picked_piece["coords"], coords):
             # Update Game state
-            castling_info = self.game.register_move(self.picked_piece["coords"], coords)
-            if castling_info is not None:
-                self.place_castling_rook(castling_info)
+            move = self.game.register_move(self.picked_piece["coords"], coords)
+            if move.castling_info is not None:
+                self.place_castling_rook(move.castling_info)
             # Update visuals
             self.swap_picked_piece(coords)
             self.change_cursor("arrow")

@@ -25,7 +25,7 @@ class Queen(Piece):
         self.range_limit = 8
         super().__init__(piece_code, coords)
 
-    def get_moves(self, board_state):
+    def get_possible_coords(self, board_state):
         """Override the get_moves from Piece class."""
         moves = set()
         for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,

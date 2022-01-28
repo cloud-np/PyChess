@@ -212,7 +212,7 @@ class Board:
             Returns true if any of the coords are being attacked.
         """
         # Check if the king is in check from the rest of the pieces
-        enemy_moves = Piece.get_enemy_moves(self.all_pieces[enemy_color], self.state)
+        enemy_moves = Piece.get_enemy_possible_coords(self.all_pieces[enemy_color], self.state)
         return any(tuple(coords) in enemy_moves for coords in coords_list)
 
     def are_coords_empty(self, coords_list):

@@ -44,7 +44,7 @@ class King(Piece):
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
 
-    def get_caslting_moves(self, board):
+    def get_caslting_coords(self, board):
         """Try adding the roke moves if they are valid."""
         moves = set()
         if self.has_moved:
@@ -72,7 +72,7 @@ class King(Piece):
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
         # Check if the king is in check from the rest of the pieces
-        enemy_moves = set()
+        enemy_possible_coords = set()
         for piece_code, enemy_list in enemies_pieces.items():
             if piece_code == Piece.PAWN | self.enemy_color:
                 continue
@@ -80,20 +80,20 @@ class King(Piece):
             # NOTE: Keep track of the attacking direction of the enemy piece.
             #       THERE MAY BE 2 DIRECTIONS OF ATTACKING.
             for en in enemy_list:
-                enemy_moves = en.get_moves(board_state)
-                if self.coords in enemy_moves:
+                enemy_possible_coords = en.get_possible_coords(board_state)
+                if self.coords in enemy_possible_coords:
                     return True
 
         # Check if the king is in check from pawns
         enemy_pawns = enemies_pieces[Piece.PAWN | self.enemy_color]
         for en_pawn in enemy_pawns:
-            enemy_moves = enemy_moves | en_pawn.get_attack_moves(board_state)
-            if self.coords in enemy_moves:
+            enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(board_state)
+            if self.coords in enemy_possible_coords:
                 return True
 
         return False
 
-    def get_moves(self, board_state):
+    def get_possible_coords(self, board_state):
         """Override the get_moves from Piece class."""
         moves = set()
         for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,

@@ -71,18 +71,18 @@ class Piece:
         return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
 
     @staticmethod
-    def get_enemy_moves(enemy_pieces, board_state):
+    def get_enemy_possible_coords(enemy_pieces, board_state):
         """Get all the enemy moves."""
-        enemy_moves = set()
+        enemy_possible_coords = set()
         for piece_code, enemy_list in enemy_pieces.items():
             for en in enemy_list:
                 if piece_code == Piece.PAWN:
-                    enemy_moves = enemy_moves | en.get_attacking_moves(board_state)
+                    enemy_possible_coords = enemy_possible_coords | en.get_attack_possible_coords(board_state)
                 else:
-                    enemy_moves = enemy_moves | en.get_moves(board_state)
-        return enemy_moves
+                    enemy_possible_coords = enemy_possible_coords | en.get_possible_coords(board_state)
+        return enemy_possible_coords
 
-    def add_moves_in_direction(self, board_state, moves: Set[Tuple[int]], direction: MoveDirection) -> None:
+    def add_moves_in_direction(self, board_state, coords_set: Set[Tuple[int]], direction: MoveDirection) -> None:
         """Found the all moves based of the 'direction' a direction.
 
         Given a direction it will generate all the moves until it hits either:
@@ -94,23 +94,23 @@ class Piece:
         ----------
         board_state : BoardStateList
             A 2d custom matrix that holds information about all the pieces on board.
-        moves : set[tuple[int]]
-            The set of the valid moves based on the criteria we added above.
+        coords_set : set[tuple[int]]
+            The set of the valid coords based on the criteria we added above.
 
         direction : MoveDirection
             The direction of which we want to generate moves to.
         """
         direction_func = Move.get_direction_func(direction)
         for i in range(1, self.range_limit):
-            move: tuple[int] = direction_func(self.coords, i)
-            piece_code = board_state[move]
+            coords: tuple[int] = direction_func(self.coords, i)
+            piece_code = board_state[coords]
             color = Piece.get_colour(piece_code)
             if piece_code == Piece.EMPTY:
-                moves.add(move)
+                coords_set.add(coords)
             elif piece_code == Piece.INVALID or color == self.color:
                 break
             elif color != self.color:
-                moves.add(move)
+                coords_set.add(coords)
                 break
 
     # def is_piece_and_same_color(self, o_piece) -> tuple[bool]:

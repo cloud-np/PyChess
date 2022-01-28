@@ -1,4 +1,5 @@
-from typing import Set, Tuple
+"""Anything related to a move how it was executed."""
+from typing import Set, Tuple, Union
 import re
 # from chess.board import Board
 
@@ -57,6 +58,97 @@ class MoveDirection:
 
 class Move:
     """Holds info about the move made."""
+
+    def __init__(self, move_num: int, start_coords: tuple, end_coords: tuple, moving_piece, taken_piece, castling_info: Union[dict, None]):
+        """Components to indentify a move."""
+        self.move_num = move_num
+        self.start_coords = start_coords
+        self.end_coords = end_coords
+        self.moving_piece = moving_piece
+        self.taken_piece = taken_piece
+        self.castling_info: dict = castling_info
+
+    @staticmethod
+    def get_direction_func(direction: MoveDirection):
+        """Return the function that corrisponds to the move direction."""
+        return {
+            MoveDirection.UP: Move.up,
+            MoveDirection.DOWN: Move.down,
+            MoveDirection.LEFT: Move.left,
+            MoveDirection.RIGHT: Move.right,
+            MoveDirection.UP_LEFT: Move.up_left,
+            MoveDirection.UP_RIGHT: Move.up_right,
+            MoveDirection.DOWN_LEFT: Move.down_left,
+            MoveDirection.DOWN_RIGHT: Move.down_right
+        }[direction]
+
+    # Horizontal directions ###############
+    @staticmethod
+    def up(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1]
+
+    @staticmethod
+    def down(coords, i) -> Tuple[int]:
+        """Return a move that has a direction downwards."""
+        return coords[0] + i, coords[1]
+
+    @staticmethod
+    def right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction right."""
+        return coords[0], coords[1] + i
+
+    @staticmethod
+    def left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction left."""
+        return coords[0], coords[1] - i
+
+    # Diagonal directions ###############
+    @staticmethod
+    def up_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] - i
+
+    @staticmethod
+    def up_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] + i
+
+    @staticmethod
+    def down_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] - i
+
+    @staticmethod
+    def down_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] + i
+
+    # TODO: This is outdated.
+    # @staticmethod
+    # def find_move_direction(start: int, end: int):
+    #     diff = end - start
+
+    #     if (diff % 7) == 0:
+    #         steps = diff // 7
+    #         # UpRight - DownLeft
+    #         return -7 if steps < 0 else 7
+    #     elif (diff % 8) == 0:
+    #         steps = diff // 8
+    #         if steps == 0:
+    #             # Left - Right
+    #             return -1 if diff < 0 else 1
+    #         else:
+    #             # Up - Down
+    #             return -8 if steps < 0 else 8
+    #     elif (diff % 9) == 0:
+    #         steps = diff // 9
+    #         # UpLeft - DownRight
+    #         return -9 if steps < 0 else 9
+
+
+class MoveDecoder:
+    """Decodes a move string to a move object."""
 
     # def __init__(self, input_str: str):
     #     """Components to indentify a move.
@@ -182,85 +274,6 @@ class Move:
             The new filtered set without the out of bounds tiles.
         """
         return moves - INVALID_TILES
-
-    # Horizontal directions ###############
-    @staticmethod
-    def up(coords, i) -> Tuple[int]:
-        """Return a move that has a direction upwards."""
-        return coords[0] - i, coords[1]
-
-    @staticmethod
-    def down(coords, i) -> Tuple[int]:
-        """Return a move that has a direction downwards."""
-        return coords[0] + i, coords[1]
-
-    @staticmethod
-    def right(coords, i) -> Tuple[int]:
-        """Return a move that has a direction right."""
-        return coords[0], coords[1] + i
-
-    @staticmethod
-    def left(coords, i) -> Tuple[int]:
-        """Return a move that has a direction left."""
-        return coords[0], coords[1] - i
-
-    # Diagonal directions ###############
-    @staticmethod
-    def up_left(coords, i) -> Tuple[int]:
-        """Return a move that has a direction upwards."""
-        return coords[0] - i, coords[1] - i
-
-    @staticmethod
-    def up_right(coords, i) -> Tuple[int]:
-        """Return a move that has a direction upwards."""
-        return coords[0] - i, coords[1] + i
-
-    @staticmethod
-    def down_left(coords, i) -> Tuple[int]:
-        """Return a move that has a direction upwards."""
-        return coords[0] + i, coords[1] - i
-
-    @staticmethod
-    def down_right(coords, i) -> Tuple[int]:
-        """Return a move that has a direction upwards."""
-        return coords[0] + i, coords[1] + i
-
-    @staticmethod
-    def get_direction_func(direction: MoveDirection):
-        """Return the function that corrisponds to the move direction."""
-        return {
-            MoveDirection.UP: Move.up,
-            MoveDirection.DOWN: Move.down,
-            MoveDirection.LEFT: Move.left,
-            MoveDirection.RIGHT: Move.right,
-            MoveDirection.UP_LEFT: Move.up_left,
-            MoveDirection.UP_RIGHT: Move.up_right,
-            MoveDirection.DOWN_LEFT: Move.down_left,
-            MoveDirection.DOWN_RIGHT: Move.down_right
-        }[direction]
-
-    # TODO check if this function works correctly.
-    # Also make a direction enum or something.
-    @staticmethod
-    def find_move_direction(start: int, end: int):
-        diff = end - start
-
-        if (diff % 7) == 0:
-            steps = diff // 7
-            # UpRight - DownLeft
-            return -7 if steps < 0 else 7
-        elif (diff % 8) == 0:
-            steps = diff // 8
-            if steps == 0:
-                # Left - Right
-                return -1 if diff < 0 else 1
-            else:
-                # Up - Down
-                return -8 if steps < 0 else 8
-        elif (diff % 9) == 0:
-            steps = diff // 9
-            # UpLeft - DownRight
-            return -9 if steps < 0 else 9
 
     @staticmethod
     def add_action(move_code: int, move_action: int) -> int:

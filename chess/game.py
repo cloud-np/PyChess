@@ -29,6 +29,7 @@ class Game:
         self.running: bool = True
         # self.moves_history:
         self.visuals: bool = visuals
+        self.moves_history: list = []
         if visuals:
             GameVisuals(self, self.board.state).main_loop()
         self.cli_loop()
@@ -76,14 +77,14 @@ class Game:
         if piece == Piece.EMPTY:
             return False
 
-        moves = piece.get_moves(self.board.state)
+        all_possible_coords = piece.get_possible_coords(self.board.state)
 
         # Get the castling moves if the playing piece was a King.
         if isinstance(piece, King):
-            moves = moves | piece.get_caslting_moves(self.board)
+            all_possible_coords = all_possible_coords | piece.get_caslting_coords(self.board)
 
         # Remove the illegal moves
-        moves = moves - self.get_illegal_moves(piece, start_coords, moves)
+        all_possible_coords = all_possible_coords - self.get_illegal_coords(piece, start_coords, all_possible_coords)
 
         # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
@@ -93,22 +94,22 @@ class Game:
         print(f"{piece.symbol}: {start_coords} --> {end_coords}")
         # print(f"moves: {moves}")
 
-        return end_coords in moves
+        return end_coords in all_possible_coords
 
     # NOTE: Add en passant.
-    def get_all_moves(self, piece, start_coords):
-        """Get all the possible moves."""
+    def get_all_possible_coords(self, piece, start_coords) -> set:
+        """Get all the possible coords."""
         # print('MOVED PIECE: ', piece)
-        moves = piece.get_moves(self.board.state)
+        coords_set = piece.get_possible_coords(self.board.state)
 
         if isinstance(piece, King):
-            castling_moves = piece.get_caslting_moves(self.board)
+            castling_moves = piece.get_caslting_coords(self.board)
             if castling_moves:
-                moves = moves | castling_moves
-        return moves
+                coords_set = coords_set | castling_moves
+        return coords_set
 
-    def get_illegal_moves(self, piece, start_coords, moves) -> set:
-        """Get the illegal moves.
+    def get_illegal_coords(self, piece, start_coords, coords_set) -> set:
+        """Get the illegal coords.
 
         Parameters
         ----------
@@ -116,8 +117,8 @@ class Game:
             The moving piece.
         start_coords : tuple(int)
             His starting pos.
-        moves : set
-            The possible moves.
+        coords_set : set
+            The possible coords.
 
         Returns
         -------
@@ -126,7 +127,7 @@ class Game:
         """
         # For each simulated move, if the king is in check, then the move is invalid.
         sim_state = self.board.simulated_board_state()
-        illegal_moves = set()
+        illegal_coords = set()
         king = self.board.kings[piece.color]
         enemy_pieces = self.board.all_pieces[piece.enemy_color]
 
@@ -134,11 +135,11 @@ class Game:
         def __play_possibly_illegal_move(sim_state, start_coords, end_coords, piece):
             is_king_in_check = king.in_check(enemy_pieces, sim_state)
             if is_king_in_check:
-                illegal_moves.add(end_coords)
+                illegal_coords.add(end_coords)
 
-        for move in moves:
-            __play_possibly_illegal_move(sim_state, start_coords=start_coords, end_coords=move, piece=piece)
-        return illegal_moves
+        for crd in coords_set:
+            __play_possibly_illegal_move(sim_state, start_coords=start_coords, end_coords=crd, piece=piece)
+        return illegal_coords
 
     @staticmethod
     def simulate_move(func):
@@ -221,16 +222,30 @@ class Game:
         new_coords : tuple
             The new coords of the piece.
         """
-        # Update pieces.
         moving_piece = self.board.get_piece(old_coords)
         taken_piece = self.board.get_piece(new_coords)
+        castling_info = self.__update_board(old_coords, new_coords, moving_piece, taken_piece)
+        self.is_white_turn = not self.is_white_turn
+
+        if self.visuals is False:
+            self.board.correct_format_print()
+        else:
+            print(self.board)
+
+        move = Move(len(self.moves_history), start_coords=old_coords, end_coords=new_coords, moving_piece=moving_piece, taken_piece=taken_piece, castling_info=castling_info)
+        self.moves_history.append(move)
+        return move
+
+    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece):
+        # Update pieces.
 
         castling_side = None
         castling_info = None
         if isinstance(moving_piece, King):
             castling_side = King.castling_side(new_coords)
-            new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
-            castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
+            if castling_side is not None:
+                new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
+                castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
 
         # Update pieces
         moving_piece.set_coords(new_coords)
@@ -242,13 +257,6 @@ class Game:
         # Update board state.
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
-
-        self.is_white_turn = not self.is_white_turn
-
-        if self.visuals is False:
-            self.board.correct_format_print()
-        else:
-            print(self.board)
         return castling_info
 
     def get_caslting_rook_positions(self, castling_side: int) -> tuple:

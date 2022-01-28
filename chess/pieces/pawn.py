@@ -23,10 +23,10 @@ class Pawn(Piece):
         """
         super().__init__(piece_code, coords)
 
-    def get_attack_moves(self, board_state, moves=None):
+    def get_attack_possible_coords(self, board_state, coords_set=None):
         """Get the attackable coords for the pawn."""
-        if moves is None:
-            moves = set()
+        if coords_set is None:
+            coords_set = set()
 
         if self.color == Piece.WHITE:
             l_coords = self.coords[0] - 1, self.coords[1] - 1
@@ -38,28 +38,39 @@ class Pawn(Piece):
         # Left enemy
         left_enemy = board_state[l_coords]
         if left_enemy != Piece.EMPTY and Piece.get_colour(left_enemy) == self.enemy_color:
-            moves.add(l_coords)
+            coords_set.add(l_coords)
 
         # Right enemy
         right_enemy = board_state[r_coords]
         if right_enemy != Piece.EMPTY and Piece.get_colour(right_enemy) == self.enemy_color:
-            moves.add(r_coords)
+            coords_set.add(r_coords)
 
-        return moves
+        return coords_set
 
-    # FIXME: Stop when a piece is in the way.
-    def get_moves(self, board_state):
+    # TODO: Maybe we can write this a bit more cleanly?
+    def get_possible_coords(self, board_state):
         """Override the get_moves from Piece class."""
-        moves = set()
+        coords_set = set()
         if self.color == Piece.WHITE:
             if self.coords[0] >= 1:
-                moves.add((self.coords[0] - 1, self.coords[1]))
+                piece_code = board_state[self.coords[0] - 1, self.coords[1]]
+                if piece_code == Piece.EMPTY:
+                    coords_set.add((self.coords[0] - 1, self.coords[1]))
             if self.coords[0] == 6:
-                moves.add((self.coords[0] - 2, self.coords[1]))
+                piece_code = board_state[self.coords[0] - 1, self.coords[1]]
+                piece_code2 = board_state[self.coords[0] - 2, self.coords[1]]
+                if piece_code == Piece.EMPTY and piece_code2 == Piece.EMPTY:
+                    coords_set.add((self.coords[0] - 2, self.coords[1]))
         else:
             if self.coords[0] <= 6:
-                moves.add((self.coords[0] + 1, self.coords[1]))
+                piece_code = board_state[self.coords[0] + 1, self.coords[1]]
+                if piece_code == Piece.EMPTY:
+                    coords_set.add((self.coords[0] + 1, self.coords[1]))
             if self.coords[0] == 1:
-                moves.add((self.coords[0] + 2, self.coords[1]))
-        self.get_attack_moves(board_state, moves)
-        return moves
+                piece_code = board_state[self.coords[0] + 1, self.coords[1]]
+                piece_code2 = board_state[self.coords[0] + 2, self.coords[1]]
+                if piece_code == Piece.EMPTY and piece_code2 == Piece.EMPTY:
+                    coords_set.add((self.coords[0] + 2, self.coords[1]))
+
+        self.get_attack_possible_coords(board_state, coords_set)
+        return coords_set

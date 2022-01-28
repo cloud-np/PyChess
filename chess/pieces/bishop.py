@@ -31,7 +31,7 @@ class Bishop(Piece):
     #     """Override the get_moves from Piece class."""
     #     return 0
 
-    def get_moves(self, board_state):
+    def get_possible_coords(self, board_state):
         """Get all possible moves for the Bishop.
 
         Parameters
