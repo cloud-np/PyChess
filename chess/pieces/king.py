@@ -38,7 +38,6 @@ class King(Piece):
         """
         self.range_limit = 2
         piece_colour = Piece.get_colour(piece_code)
-        self.enemy_color = Piece.BLACK if piece_colour == Piece.WHITE else Piece.WHITE
         self.has_moved = False
         self.r_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
@@ -46,15 +45,15 @@ class King(Piece):
 
     def get_caslting_coords(self, board):
         """Try adding the roke moves if they are valid."""
-        moves = set()
+        possible_castle_coords = set()
         if self.has_moved:
-            return None
+            return possible_castle_coords
         if self.r_castle['is_valid'] and not board.are_coords_under_attack(self.r_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.r_castle['coords_list']):
-            moves.add((7, 6) if self.enemy_color == Piece.BLACK else (0, 6))
+            possible_castle_coords.add((7, 6) if self.color == Piece.WHITE else (0, 6))
 
         if self.l_castle['is_valid'] and not board.are_coords_under_attack(self.l_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.l_castle['coords_list']):
-            moves.add((7, 2) if self.enemy_color == Piece.BLACK else (0, 2))
-        return moves
+            possible_castle_coords.add((7, 2) if self.color == Piece.WHITE else (0, 2))
+        return possible_castle_coords
 
     @staticmethod
     def castling_side(end_coords):

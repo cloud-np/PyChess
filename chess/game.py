@@ -6,6 +6,7 @@ from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.king import King, CastleSide
+from chess.pieces.rook import Rook, RookCorner
 from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
@@ -225,7 +226,16 @@ class Game:
         moving_piece = self.board.get_piece(old_coords)
         taken_piece = self.board.get_piece(new_coords)
         castling_info = self.__update_board(old_coords, new_coords, moving_piece, taken_piece)
-        self.is_white_turn = not self.is_white_turn
+
+        # Update castling info.
+        if isinstance(moving_piece, King):
+            moving_piece.has_moved = True
+        if isinstance(moving_piece, Rook):
+            moving_piece.has_moved = True
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_RIGHT, RookCorner.TOP_RIGHT):
+                self.board.kings[moving_piece.color].r_castle['is_valid'] = False
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_LEFT, RookCorner.TOP_LEFT):
+                self.board.kings[moving_piece.color].l_castle['is_valid'] = False
 
         if self.visuals is False:
             self.board.correct_format_print()
@@ -234,6 +244,9 @@ class Game:
 
         move = Move(len(self.moves_history), start_coords=old_coords, end_coords=new_coords, moving_piece=moving_piece, taken_piece=taken_piece, castling_info=castling_info)
         self.moves_history.append(move)
+
+        # Change the turn.
+        self.is_white_turn = not self.is_white_turn
         return move
 
     def __update_board(self, old_coords, new_coords, moving_piece, taken_piece):

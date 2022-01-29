@@ -27,22 +27,22 @@ class Knight(Piece):
         """Override the get_moves from Piece class."""
         # We could be 'fancy' and use permutation but it generates 4 more cases
         # which we do not need and it would take couple ifs to get rid of them.
-        pos_moves = [(self.coords[0] - 1, self.coords[1] - 2),
-                     (self.coords[0] - 2, self.coords[1] - 1),
-                     (self.coords[0] + 1, self.coords[1] - 2),
-                     (self.coords[0] + 2, self.coords[1] - 1),
+        possible_coords = [(self.coords[0] - 1, self.coords[1] - 2),
+                           (self.coords[0] - 2, self.coords[1] - 1),
+                           (self.coords[0] + 1, self.coords[1] - 2),
+                           (self.coords[0] + 2, self.coords[1] - 1),
 
-                     (self.coords[0] + 1, self.coords[1] + 2),
-                     (self.coords[0] + 2, self.coords[1] + 1),
-                     (self.coords[0] - 1, self.coords[1] + 2),
-                     (self.coords[0] - 2, self.coords[1] + 1)]
-        moves = set()
-        for move in pos_moves:
-            piece_code = board_state[move]
+                           (self.coords[0] + 1, self.coords[1] + 2),
+                           (self.coords[0] + 2, self.coords[1] + 1),
+                           (self.coords[0] - 1, self.coords[1] + 2),
+                           (self.coords[0] - 2, self.coords[1] + 1)]
+        coords_set = set()
+        for coords in possible_coords:
+            piece_code = board_state[coords]
             # if piece_code == Piece.INVALID:
             #     pass
             if piece_code == Piece.EMPTY:
-                moves.add(move)
+                coords_set.add(coords)
             elif Piece.get_colour(piece_code) == self.enemy_color:
-                moves.add(move)
-        return moves
+                coords_set.add(coords)
+        return coords_set
