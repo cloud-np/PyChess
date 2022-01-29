@@ -4,6 +4,7 @@ from typing import List
 from colorama import Fore
 from chess.board import BoardStateList
 from itertools import chain
+from chess.ai.move_picker import random_legal_move
 from chess.pieces.piece import Piece
 
 
@@ -125,8 +126,7 @@ class GameVisuals:
         index : int
             Index of the tile that had the piece.
         """
-        self.picked_piece = {
-            "img": self.tiles[coords[0]][coords[1]].piece_img, "coords": coords}
+        self.picked_piece = {"img": self.tiles[coords[0]][coords[1]].piece_img, "coords": coords}
 
     def draw_bg(self):
         """Keep background-img on the screen refreshed."""
@@ -186,6 +186,15 @@ class GameVisuals:
         self.is_running = True
 
         while self.is_running:
+            # Check if its the PC's turn
+            if not self.game.is_white_turn and self.game.player2 == 'PC':
+                move_coords = random_legal_move(game=self.game)
+                if move_coords is None:
+                    print("GG no legal moves")
+                else:
+                    move = self.game.register_move(*move_coords)
+                    self.update_visuals_based_on_move(move)
+
             # Keep tracking the position of the mouse
             mx, my = py_g.mouse.get_pos()
 
@@ -226,7 +235,18 @@ class GameVisuals:
             # Update everything on the screen
             py_g.display.update()
 
+    def update_visuals_based_on_move(self, move):
+        """Update the visuals based on the move that got played."""
+        # Update Game state
+        if move.castling_info is not None:
+            self.place_castling_rook(move.castling_info)
+        s_tile = self.tiles[move.start_coords[0]][move.start_coords[1]]
+        e_tile = self.tiles[move.end_coords[0]][move.end_coords[1]]
+        e_tile.piece_img = s_tile.piece_img
+        s_tile.piece_img = None
+
     def try_place_piece(self, m_pos) -> bool:
+        # sourcery skip: inline-immediately-returned-variable
         """Try place the picked piece either back to its original tile or at the specific tile the player clicked.
 
         Parameters
@@ -247,15 +267,20 @@ class GameVisuals:
                 self.place_picked_piece_back()
             return True
         elif self.game.is_player_move_valid(self.picked_piece["coords"], coords):
-            # Update Game state
             move = self.game.register_move(self.picked_piece["coords"], coords)
-            if move.castling_info is not None:
-                self.place_castling_rook(move.castling_info)
-            # Update visuals
-            self.swap_picked_piece(coords)
-            self.change_cursor("arrow")
-            return True
+            did_update = self.update_visuals_based_on_picked_piece(move, coords)
+            return did_update
         return False
+
+    def update_visuals_based_on_picked_piece(self, move, coords):
+        """Play a legal move and update the visuals corrispodently."""
+        # Update Game state
+        if move.castling_info is not None:
+            self.place_castling_rook(move.castling_info)
+        # Update visuals
+        self.swap_picked_piece(coords)
+        self.change_cursor("arrow")
+        return True
 
     def place_castling_rook(self, castling_info: dict):
         """Place the rook on the screen from the given positions.

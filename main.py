@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # 3) Encode moves to strings.
     # 4) A way to make and unmake moves.
 
-    g = Game()
+    g = Game(player1="Human", player2="PC")
     # g = Game(visuals=False)
     # move = Move.decode_to_move("Raxd1", g.board, g.is_white_turn)
     # print('\n')
