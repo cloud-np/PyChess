@@ -1,3 +1,3 @@
 # PyChess
 
-A chess engine made with Python.
+A chess engine and a graphical interface for playing chess made with Python.
