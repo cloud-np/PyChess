@@ -24,4 +24,4 @@ if __name__ == "__main__":
     # print(move)
     # move = Move.decode_to_move("Ne2e6", g.board, g.is_white_turn)
     # print('\n')
-    # print(move)
+    # print(mov)
