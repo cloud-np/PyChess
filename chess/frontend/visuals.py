@@ -268,7 +268,8 @@ class GameVisuals:
             return True
         elif self.game.is_player_move_valid(self.picked_piece["coords"], coords):
             move = self.game.register_move(self.picked_piece["coords"], coords)
-            did_update = self.update_visuals_based_on_picked_piece(move, coords)
+            did_update = self.update_visuals_based_on_picked_piece(
+                move, coords)
             return did_update
         return False
 
@@ -290,8 +291,10 @@ class GameVisuals:
         castling_info : dict
             This includes the info of where the rook will be placed and were it used to be.
         """
-        rook_tile = self.tiles[castling_info["rook_coords"][0]][castling_info["rook_coords"][1]]
-        new_rook_tile = self.tiles[castling_info["new_rook_coords"][0]][castling_info["new_rook_coords"][1]]
+        rook_tile = self.tiles[castling_info["rook_coords"]
+                               [0]][castling_info["rook_coords"][1]]
+        new_rook_tile = self.tiles[castling_info["new_rook_coords"]
+                                   [0]][castling_info["new_rook_coords"][1]]
         new_rook_tile.piece_img = rook_tile.piece_img
         rook_tile.piece_img = None
 
