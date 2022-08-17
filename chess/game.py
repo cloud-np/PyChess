@@ -7,7 +7,7 @@ from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.king import King, CastleSide
-from chess.pieces.rook import Rook, RookCorner
+from chess.pieces.rook import Rook
 from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
@@ -20,12 +20,12 @@ STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR"
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True):
+    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True, is_white_turn: bool = True):
         """Construct."""
         self.id: UUID = uuid4()
         self.time_created = datetime.now()
         self.debug: bool = debug
-        self.is_white_turn: bool = True
+        self.is_white_turn: bool = is_white_turn
         self.player1 = player1
         self.player2 = player2
         self.board: Board = Board(STARTING_FEN)
@@ -242,32 +242,27 @@ class Game:
         end_coords : tuple
             The new coords of the piece.
         """
-        moving_piece = self.board.get_piece(start_coords)
-        taken_piece = self.board.get_piece(end_coords)
-        castling_info = self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
+        moving_piece: Piece = self.board.get_piece(start_coords)
+        taken_piece: Piece = self.board.get_piece(end_coords)
+        castling_info: Dict[List[int], List[int]] = self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
+
+        # NOTE Make it possible so the Pawn can transform here.
+        transformed_piece = None
+        if moving_piece.ptype == Piece.PAWN and moving_piece.is_transforming():
+            ...
+            # self.board.transform_pawn_to(moving_pawn, piece_code)
 
         if self.visuals is False:
             self.board.correct_format_print()
         else:
             print(self.board)
 
-        move = Move(len(self.moves_history), start_coords=start_coords, end_coords=end_coords, moving_piece=moving_piece, taken_piece=taken_piece, castling_info=castling_info)
+        move = Move(len(self.moves_history), start_coords=start_coords, end_coords=end_coords, moving_piece=moving_piece, taken_piece=taken_piece, castling_info=castling_info, pawn_transformed_to=transformed_piece)
         self.moves_history.append(move)
 
         # Change the turn.
         self.is_white_turn = not self.is_white_turn
         return move
-
-    def __try_removing_castling(self, moving_piece):
-        """Remove castling privileges depending the moving piece."""
-        if isinstance(moving_piece, King):
-            moving_piece.has_moved = True
-        if isinstance(moving_piece, Rook):
-            moving_piece.has_moved = True
-            if moving_piece.rook_corner in (RookCorner.BOTTOM_RIGHT, RookCorner.TOP_RIGHT):
-                self.board.kings[moving_piece.color].r_castle['is_valid'] = False
-            if moving_piece.rook_corner in (RookCorner.BOTTOM_LEFT, RookCorner.TOP_LEFT):
-                self.board.kings[moving_piece.color].l_castle['is_valid'] = False
 
     def __update_board(self, old_coords, new_coords, moving_piece, taken_piece) -> Dict[List[int], List[int]]:
         """Update the board state and pieces.
@@ -288,7 +283,7 @@ class Game:
         dict
             If the moving piece is a King and the move was castling, return the castling info.
         """
-        self.__try_removing_castling(moving_piece)
+        self.board.try_removing_castling(moving_piece)
 
         # Was the move a castling move?
         castling_side = None

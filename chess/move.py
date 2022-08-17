@@ -59,7 +59,7 @@ class MoveDirection:
 class Move:
     """Holds info about the move made."""
 
-    def __init__(self, move_num: int, start_coords: tuple, end_coords: tuple, moving_piece, taken_piece, castling_info: Union[dict, None]):
+    def __init__(self, move_num: int, start_coords: tuple, end_coords: tuple, moving_piece, taken_piece, castling_info: Union[dict, None], pawn_transformed_to):
         """Components to indentify a move."""
         self.move_num = move_num
         self.start_coords = start_coords

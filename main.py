@@ -4,14 +4,8 @@ from chess.game import Game
 
 if __name__ == "__main__":
 
-    # TODO
-    # 0) Make a GameController that controlls both the Game/GameLogic and GameVisuals
-    # 1) Make the basic piece movements.
-    # 2) Add the castle option in decoding move.
-    # 3) Encode moves to strings.
-    # 4) A way to make and unmake moves.
-
-    g = Game(player1="Human", player2="PC")
+    # g = Game(player1="Human", player2="PC")
+    g = Game(player1="Human", player2="Human")
     # g = Game(visuals=False)
     # move = Move.decode_to_move("Raxd1", g.board, g.is_white_turn)
     # print('\n')

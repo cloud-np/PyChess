@@ -46,6 +46,18 @@ class Pawn(Piece):
             coords_set.add(r_coords)
 
         return coords_set
+    
+    def is_transforming(self) -> bool:
+        """This detects if the Pawn is transforming based on each position and color."""
+        if self.color == Piece.WHITE and self.coords[0] == 0:
+            return True
+        if self.color == Piece.BLACK and self.coords[0] == 7:
+            return True
+        return False
+            
+    
+    def get_transform_possible_coords(self, board_state):
+        ...
 
     # TODO: Maybe we can write this a bit more cleanly?
     def get_possible_coords(self, board_state):

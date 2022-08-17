@@ -38,7 +38,6 @@ class King(Piece):
         """
         self.range_limit = 2
         piece_colour = Piece.get_colour(piece_code)
-        self.has_moved = False
         self.r_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
@@ -46,7 +45,7 @@ class King(Piece):
     def get_castling_coords(self, board):
         """Try adding the roke moves if they are valid."""
         possible_castle_coords = set()
-        if self.has_moved:
+        if self.times_moved > 0:
             return possible_castle_coords
         if self.r_castle['is_valid'] and not board.are_coords_under_attack(self.r_castle['coords_list'], self.enemy_color) and board.are_coords_empty(self.r_castle['coords_list']):
             possible_castle_coords.add((7, 6) if self.color == Piece.WHITE else (0, 6))

@@ -6,7 +6,7 @@ from typing import Dict, List
 from chess.pieces.piece import Piece
 from chess.pieces.bishop import Bishop
 from chess.pieces.queen import Queen
-from chess.pieces.rook import Rook
+from chess.pieces.rook import Rook, RookCorner
 from chess.pieces.king import King
 from chess.pieces.knight import Knight
 from chess.pieces.pawn import Pawn
@@ -73,6 +73,47 @@ class Board:
         # print(self)
         self.correct_format_print()
 
+    def try_removing_castling(self, moving_piece):
+        """Remove castling privileges depending the moving piece."""
+        if isinstance(moving_piece, Rook):
+            # Check if the rook moved was in the Right half of the board.
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_RIGHT, RookCorner.TOP_RIGHT):
+                self.kings[moving_piece.color].r_castle['is_valid'] = False
+
+            # Check if the rook moved was in the Left half of the board.
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_LEFT, RookCorner.TOP_LEFT):
+                self.kings[moving_piece.color].l_castle['is_valid'] = False
+
+    def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
+        """Transform to a desired Piece.
+        
+        Parameters
+        ----------
+        piece_code : int
+            Piece code that describes the piece type and color.
+
+        Raises
+        ------
+        Exception
+            [description]
+        """
+
+        # if piece_code
+
+        # Create the Piece that the pawn will transform too
+        PieceConstructor = Board.piece_classes(piece_code)
+        transformed_piece = PieceConstructor(piece_code, moving_pawn.coords)
+        transformed_piece.times_moved = moving_pawn.times_moved
+
+        # Update Pieces
+        if moving_pawn.color == Piece.WHITE:
+            self.w_pieces[moving_pawn.piece_code].remove(moving_pawn)
+            self.w_pieces[transformed_piece.piece_code].append(transformed_piece)
+        else:
+            self.b_pieces[moving_pawn.piece_code].remove(moving_pawn)
+            self.b_pieces[transformed_piece.piece_code].append(transformed_piece)
+
+        
     def kill_piece(self, dead_piece: Piece):
         self.dead_pieces.append(dead_piece)
         dead_piece.is_dead = True
@@ -113,11 +154,6 @@ class Board:
         -------
         Piece
             The piece that was found.
-
-        Raises
-        ------
-        Exception
-            [description]
         """
         if piece_code == Piece.EMPTY:
             return None
@@ -167,7 +203,7 @@ class Board:
 
         Parameters
         ----------
-        pc : int
+        piece_code : int
             Piece code that describes the piece type and color.
         """
         PieceConstructor = Board.piece_classes(piece_code)
