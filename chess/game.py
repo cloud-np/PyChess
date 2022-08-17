@@ -1,6 +1,7 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
 from uuid import UUID
+from typing import Dict, List
 
 from chess.board import Board
 from datetime import datetime
@@ -13,8 +14,6 @@ from chess.frontend.visuals import GameVisuals
 
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-# BOARD_SIZE = 64
-# VISUAL_BOARD_SIZE = 64
 
 
 class Game:
@@ -108,7 +107,7 @@ class Game:
                 coords_set = coords_set | piece.get_possible_coords(self.board.state)
 
                 if isinstance(piece, King):
-                    castling_moves = piece.get_caslting_coords(self.board)
+                    castling_moves = piece.get_castling_coords(self.board)
                     if castling_moves:
                         coords_set = coords_set | castling_moves
                 coords_set = coords_set - self.get_illegal_coords(piece, coords_set)
@@ -122,7 +121,7 @@ class Game:
         coords_set = piece.get_possible_coords(self.board.state)
 
         if isinstance(piece, King):
-            castling_moves = piece.get_caslting_coords(self.board)
+            castling_moves = piece.get_castling_coords(self.board)
             if castling_moves:
                 coords_set = coords_set | castling_moves
         return coords_set
@@ -269,7 +268,7 @@ class Game:
             if moving_piece.rook_corner in (RookCorner.BOTTOM_LEFT, RookCorner.TOP_LEFT):
                 self.board.kings[moving_piece.color].l_castle['is_valid'] = False
 
-    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece):
+    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece) -> Dict[List[int], List[int]]:
         """Update the board state and pieces.
 
         Parameters
@@ -293,7 +292,7 @@ class Game:
         # Was the move a castling move?
         castling_side = None
         castling_info = None
-        if isinstance(moving_piece, King):
+        if isinstance(moving_piece, King) and moving_piece.times_moved == 0:
             castling_side = King.castling_side(new_coords)
             if castling_side is not None:
                 new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
@@ -301,6 +300,7 @@ class Game:
 
         # Update pieces
         moving_piece.set_coords(new_coords)
+        moving_piece.times_moved += 1
         if isinstance(taken_piece, Piece):
             self.board.kill_piece(taken_piece)
             # NOTE: This needs to look into
@@ -311,7 +311,7 @@ class Game:
         self.board.state[old_coords] = Piece.EMPTY
         return castling_info
 
-    def get_caslting_rook_positions(self, castling_side: int) -> tuple:
+    def get_castling_rook_positions(self, castling_side: int) -> tuple:
         """Return the positions of the rooks involved in a castling."""
         if castling_side == CastleSide.WK_SIDE_R:
             rook_castle_coords = (7, 5)
@@ -337,7 +337,7 @@ class Game:
         castling_side : int
             Change the board state based on the castling side.
         """
-        new_rook_coords, rook_coords = self.get_caslting_rook_positions(castling_side)
+        new_rook_coords, rook_coords = self.get_castling_rook_positions(castling_side)
         # Change the coords of the rook and the board state.
         self.board.get_piece(rook_coords).set_coords(new_rook_coords)
         self.board.state[new_rook_coords] = self.board.state[rook_coords]

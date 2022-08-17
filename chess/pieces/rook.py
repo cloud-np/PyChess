@@ -32,7 +32,6 @@ class Rook(Piece):
             The coordinates of the piece.
         """
         self.range_limit = 8
-        self.has_moved = False
         self.rook_corner = Rook.__get_rooks_corner(coords)
         super().__init__(piece_code, coords)
 

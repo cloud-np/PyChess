@@ -42,6 +42,7 @@ class Piece:
         self.ptype: int = Piece.get_type(piece_code)
         self.symbol: int = Piece.get_symbol(piece_code)
         self.coords: tuple = coords
+        self.times_moved: int = 0
         self.is_dead: bool = False
     #     self.simulated: dict = {'is_simulated': False, 'og_coords': coords}
 

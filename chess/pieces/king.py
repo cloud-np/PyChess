@@ -43,7 +43,7 @@ class King(Piece):
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
 
-    def get_caslting_coords(self, board):
+    def get_castling_coords(self, board):
         """Try adding the roke moves if they are valid."""
         possible_castle_coords = set()
         if self.has_moved:
@@ -56,7 +56,7 @@ class King(Piece):
         return possible_castle_coords
 
     @staticmethod
-    def castling_side(end_coords):
+    def castling_side(end_coords) -> CastleSide:
         """Return the side of the castle.
 
         We use .get() to avoid KeyErrors.

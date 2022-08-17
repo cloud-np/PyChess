@@ -10,6 +10,8 @@ from chess.pieces.piece import Piece
 
 IMGS_PATH = "chess/frontend/assets/images"
 BOARD_OFFSET = 21
+BOARD_SIZE = (800, 800)
+VISUAL_BOARD_SIZE = (1000, 1000)
 
 
 class EventType:
@@ -47,7 +49,7 @@ class Background(py_g.sprite.Sprite):
         """
         py_g.sprite.Sprite.__init__(self)
         self.image = py_g.transform.scale(
-            py_g.image.load(image_file), (800, 800))
+            py_g.image.load(image_file), BOARD_SIZE)
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
 
@@ -104,7 +106,7 @@ class GameVisuals:
         self.is_running = False
         self.is_piece_picked = False
         self.clock = py_g.time.Clock()
-        self.screen = py_g.display.set_mode((800, 800))
+        self.screen = py_g.display.set_mode(VISUAL_BOARD_SIZE)
         self.picked_piece = {"img": None, "coords": None}
         self.background = Background(f"{IMGS_PATH}/board.png", [0, 0])
         self.tiles = [[Tile(i, j) for i in range(8)] for j in range(8)]
