@@ -11,8 +11,8 @@ from chess.frontend.visuals import GameVisuals
 
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 STARTING_FEN = "rnbqkbnr/ppppp1pp/8/8/4P3/8/PPPP1PPP/RNBQKBNR"
-BOARD_SIZE = 120
-VISUAL_BOARD_SIZE = 64
+BOARD_TILES = 120
+VISUAL_BOARD_TILES = 64
 
 
 class Game:
@@ -24,10 +24,10 @@ class Game:
         self.time_created = datetime.now()
         self.debug: bool = debug
         self.is_white_turn: bool = True
-        self.board: Board = Board(STARTING_FEN, BOARD_SIZE)
+        self.board: Board = Board(STARTING_FEN, BOARD_TILES)
         # self.moves_history:
         if visuals:
-            self.visuals: GameVisuals = GameVisuals(self, VISUAL_BOARD_SIZE, self.board.state)
+            self.visuals: GameVisuals = GameVisuals(self, VISUAL_BOARD_TILES, self.board.state)
             self.visuals.main_loop()
 
     def __str__(self) -> str:
