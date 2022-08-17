@@ -218,6 +218,52 @@ class Board:
     def are_coords_empty(self, coords_list):
         """Check if ALL the given coords are empty."""
         return all(self.state[coords] == Piece.EMPTY for coords in coords_list)
+    
+    def state_and_pieces_to_fen(self) -> str:
+        """Given the board state it produces the fen string.
+
+        Parameters
+        ----------
+        self : Board
+            The board and the state init.
+
+        Returns
+        -------
+        str
+            The fen string.
+        """
+        pos: int = 0
+        fen: str = ""
+        for row in self.state:
+            for piece_code in row:
+                ptype = Piece.get_type(piece_code)
+                colour = Piece.get_colour(piece_code)
+                if ptype == Piece.EMPTY:
+                    pos += 1
+                elif pos > 0:
+                    fen += str(pos)
+                    pos = 0
+
+                if ptype == Piece.PAWN:
+                    fen += 'P' if colour == Piece.WHITE else 'p'
+                elif ptype == Piece.BISHOP:
+                    fen += 'B' if colour == Piece.WHITE else 'b'
+                elif ptype == Piece.KNIGHT:
+                    fen += 'N' if colour == Piece.WHITE else 'n'
+                elif ptype == Piece.ROOK:
+                    fen += 'R' if colour == Piece.WHITE else 'r'
+                elif ptype == Piece.KING:
+                    fen += 'K' if colour == Piece.WHITE else 'k'
+                elif ptype == Piece.QUEEN:
+                    fen += 'Q' if colour == Piece.WHITE else 'q'
+            else:
+                if pos > 0:
+                    fen += str(pos)
+                    pos = 0
+            fen += "/"
+
+        # Remove the symbol '/'
+        return fen[:-1]
 
     def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
@@ -371,6 +417,7 @@ class Board:
                 piece_code = self.state[row, col]
                 print(
                     f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
+        print(f'\n{self.state_and_pieces_to_fen()}')
         return ' '
 
     def correct_format_print(self):
