@@ -7,7 +7,6 @@ from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.king import King, CastleSide
-from chess.pieces.rook import Rook
 from chess.move import Move
 from chess.frontend.visuals import GameVisuals
 
@@ -99,17 +98,14 @@ class Game:
 
     def get_all_possible_moves(self) -> set:
         """Get all the possible moves."""
-        # print('MOVED PIECE: ', piece)
         colors_turn = Piece.WHITE if self.is_white_turn else Piece.BLACK
         moves = []
         for piece_code, piece_list in self.board.all_pieces[colors_turn].items():
             for piece in piece_list:
                 coords_set = set()
                 coords_set = coords_set | piece.get_possible_coords(self.board.state)
-
                 if isinstance(piece, King):
-                    castling_moves = piece.get_castling_coords(self.board)
-                    if castling_moves:
+                    if castling_moves := piece.get_castling_coords(self.board):
                         coords_set = coords_set | castling_moves
                 coords_set = coords_set - self.get_illegal_coords(piece, coords_set)
                 moves.append((piece.coords, coords_set))
@@ -118,12 +114,9 @@ class Game:
     # NOTE: Add en passant.
     def get_piece_possible_coords(self, piece, start_coords) -> set:
         """Get all the possible coords."""
-        # print('MOVED PIECE: ', piece)
         coords_set = piece.get_possible_coords(self.board.state)
-
         if isinstance(piece, King):
-            castling_moves = piece.get_castling_coords(self.board)
-            if castling_moves:
+            if castling_moves := piece.get_castling_coords(self.board):
                 coords_set = coords_set | castling_moves
         return coords_set
 
