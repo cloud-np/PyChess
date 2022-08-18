@@ -188,6 +188,7 @@ class GameVisuals:
         self.is_running = True
 
         while self.is_running:
+            # NOTE: Make it a more dynamic so the player and PC have different colours.
             # Check if its the PC's turn
             if not self.game.is_white_turn and self.game.player2 == 'PC':
                 move_coords = random_legal_move(game=self.game)

@@ -163,10 +163,22 @@ class MoveDecoder:
 
     @staticmethod
     def parse_coords(input_str) -> Tuple[int, int]:
+        """Parse the coords of the move from the input string.
+
+        Parameters
+        ----------
+        input_str : str
+            The input string of the user.
+
+        Returns
+        -------
+        Tuple[int, int]
+            The coords of the move.
+        """
         if re.search("[a-h][1-8]{1}", input_str):
             # We have a valid move.
-            start_tile = Move.get_tile_coords(input_str[:2])
-            end_tile = Move.get_tile_coords(input_str[2:])
+            start_tile = MoveDecoder.get_tile_coords(input_str[:2])
+            end_tile = MoveDecoder.get_tile_coords(input_str[2:])
             return start_tile, end_tile
         return Exception("Invalid move input.")
 

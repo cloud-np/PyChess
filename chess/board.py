@@ -51,10 +51,11 @@ class Board:
         fen : str
             A way to represent the board state.
         """
-        self.fen: str = fen
+        self.starting_fen: str = fen
         self.state: BoardStateList = self.setup_board_state()
+
         # This assign does nothing here its just for readability.
-        self.state, pieces = self.fen_to_state_and_pieces(fen)
+        self.state, pieces, self.colour_to_move = self.fen_to_state_and_pieces(fen)
 
         # Get White Lists
         self.w_pieces = self.organize_pieces(pieces, is_whites=True)
@@ -86,7 +87,9 @@ class Board:
 
     def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
         """Transform to a desired Piece.
-        
+
+        Transform to a desired Piece and removed the original Pawn from the list.
+
         Parameters
         ----------
         piece_code : int
@@ -108,12 +111,13 @@ class Board:
         # Update Pieces
         if moving_pawn.color == Piece.WHITE:
             self.w_pieces[moving_pawn.piece_code].remove(moving_pawn)
-            self.w_pieces[transformed_piece.piece_code].append(transformed_piece)
+            self.w_pieces[transformed_piece.piece_code].append(
+                transformed_piece)
         else:
             self.b_pieces[moving_pawn.piece_code].remove(moving_pawn)
-            self.b_pieces[transformed_piece.piece_code].append(transformed_piece)
+            self.b_pieces[transformed_piece.piece_code].append(
+                transformed_piece)
 
-        
     def kill_piece(self, dead_piece: Piece):
         self.dead_pieces.append(dead_piece)
         dead_piece.is_dead = True
@@ -185,12 +189,12 @@ class Board:
             separated in lists based on their type.
         """
         color = Piece.WHITE if is_whites else Piece.BLACK
-        pieces: Dict[int, List[int]] = {Piece.KING | color: list(),
-                                        Piece.PAWN | color: list(),
-                                        Piece.BISHOP | color: list(),
-                                        Piece.KNIGHT | color: list(),
-                                        Piece.ROOK | color: list(),
-                                        Piece.QUEEN | color: list()}
+        pieces: Dict[int, List[int]] = {Piece.KING | color: [],
+                                        Piece.PAWN | color: [],
+                                        Piece.BISHOP | color: [],
+                                        Piece.KNIGHT | color: [],
+                                        Piece.ROOK | color: [],
+                                        Piece.QUEEN | color: []}
 
         for piece in all_pieces:
             if isinstance(piece, Piece) and piece.color == color:
@@ -228,7 +232,7 @@ class Board:
 
     def setup_board_state(self) -> np.ndarray:
         """Do the setup for the state of the board."""
-        return BoardStateList([[Piece.EMPTY for i in range(8)] for j in range(8)])
+        return BoardStateList([[Piece.EMPTY for _ in range(8)] for _ in range(8)])
 
     def are_coords_under_attack(self, coords_list, enemy_color):
         """Check if any of the given coords are being attacked.
@@ -254,7 +258,7 @@ class Board:
     def are_coords_empty(self, coords_list):
         """Check if ALL the given coords are empty."""
         return all(self.state[coords] == Piece.EMPTY for coords in coords_list)
-    
+
     def state_and_pieces_to_fen(self) -> str:
         """Given the board state it produces the fen string.
 
@@ -292,14 +296,17 @@ class Board:
                     fen += 'K' if colour == Piece.WHITE else 'k'
                 elif ptype == Piece.QUEEN:
                     fen += 'Q' if colour == Piece.WHITE else 'q'
-            else:
-                if pos > 0:
-                    fen += str(pos)
-                    pos = 0
+
+            if pos > 0:
+                fen += str(pos)
+                pos = 0
             fen += "/"
 
         # Remove the symbol '/'
-        return fen[:-1]
+        # fen = fen[:-1] + " " + self.get_castling_fen() + " " + self.get_en_passant_fen() + " " + str(self.half_move_clock) + " " + str(self.full_move_number)
+        colour_turn: str = " w " if self.colour_to_move == Piece.WHITE else " b "
+        fen = fen[:-1] + colour_turn
+        return fen
 
     def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
@@ -321,24 +328,18 @@ class Board:
         ValueError
             In case there is a wrong symbol in the fen.
         """
-        # np.full((120), 32, dtype="uint8")
-        # Adding the error bits should be done when creating the board obj.
-        # The pos could start from 21 and stop at 98
         pieces: list = []
+        colour_turn: int = Piece.WHITE
         pos: int = 0
-        for ch in fen:
-            if pos > 63:
-                raise ValueError(f"Exited board boundries: {pos}")
-
-            # Skip that many tiles.
+        for i, ch in enumerate(fen):
+            # Needs a regex to check if the fen is valid
+            # if pos > 63:
+            #     raise ValueError(f"Exited board boundries: {pos}")
             if ch in "12345678":
                 pos += int(ch)
                 continue
-
-            # Find the color of the piece.
-            piece_code = 0b0
+            piece_code = 0
             piece_code |= Piece.WHITE if ch.isupper() else Piece.BLACK
-            # Find the type of the piece.
             chl = ch.lower()
             if chl == 'k':
                 piece_code |= Piece.KING
@@ -347,25 +348,26 @@ class Board:
             elif chl == 'n':
                 piece_code |= Piece.KNIGHT
             elif chl == 'b':
-                piece_code |= Piece.BISHOP
+                # This can be either a bishop or a black to move.
+                if fen[i - 1] == ' ':
+                    colour_turn = Piece.BLACK
+                    continue
+                else:
+                    piece_code |= Piece.BISHOP
             elif chl == 'r':
                 piece_code |= Piece.ROOK
             elif chl == 'q':
                 piece_code |= Piece.QUEEN
-            elif chl == '/':
+            elif chl in ['/', ' ', 'w']:
                 continue
             else:
                 raise ValueError(f"Unkown symbol in fen: {chl}")
-
-            # Occupy the pos.
             row = pos // 8
             col = pos - row * 8
-
             pieces.append(Board.make_piece(piece_code, (row, col)))
             self.state[row, col] = piece_code
             pos += 1
-
-        return self.state, pieces
+        return self.state, pieces, colour_turn
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:
@@ -468,4 +470,5 @@ class Board:
                 print(
                     f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
         print('\n\n      a     b     c     d     e     f     g     h\n\n')
+        print(f'{self.state_and_pieces_to_fen()}\n\n')
         return ' '

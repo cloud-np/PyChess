@@ -7,27 +7,27 @@ from chess.board import Board
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.king import King, CastleSide
-from chess.move import Move
+from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
 
 
-STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR"
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
+STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b"
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 
 class Game:
     """Basically the main controller for game visuals and game logic."""
 
-    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True, is_white_turn: bool = True):
+    def __init__(self, debug: bool = False, player1: str = "PC", player2: str = "PC", visuals: bool = True):
         """Construct."""
         self.id: UUID = uuid4()
         self.time_created = datetime.now()
         self.debug: bool = debug
-        self.is_white_turn: bool = is_white_turn
         self.player1 = player1
         self.player2 = player2
         self.board: Board = Board(STARTING_FEN)
+        self.is_white_turn: bool = self.board.colour_to_move == Piece.WHITE
         self.running: bool = True
         # self.moves_history:
         self.visuals: bool = visuals
@@ -43,7 +43,7 @@ class Game:
         while self.running:
             # Get the input.
             input_str = input("Enter the start and end coords: ")
-            start_coords, end_coords = Move.parse_coords(input_str)
+            start_coords, end_coords = MoveDecoder.parse_coords(input_str)
 
             # Check if the move is valid.
             # if self.is_player_move_valid(start_coords, end_coords):
@@ -245,6 +245,7 @@ class Game:
             ...
             # self.board.transform_pawn_to(moving_pawn, piece_code)
 
+        # Reveal board state.
         if self.visuals is False:
             self.board.correct_format_print()
         else:
@@ -277,6 +278,8 @@ class Game:
             If the moving piece is a King and the move was castling, return the castling info.
         """
         self.board.try_removing_castling(moving_piece)
+        # Since the move is registered, the opposite team plays next.
+        self.board.colour_to_move: int = Piece.BLACK if self.is_white_turn else Piece.WHITE
 
         # Was the move a castling move?
         castling_side = None
