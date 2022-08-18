@@ -1,10 +1,38 @@
 """board module contains all the classes and methods which are needed for a chessboard to be functional."""
 import numpy as np
+from typing import Any
 # import numpy.typing as npt
 from typing import Dict, List
-from chess.piece import Piece
+from chess.pieces.piece import Piece
+from chess.pieces.bishop import Bishop
+from chess.pieces.queen import Queen
+from chess.pieces.rook import Rook, RookCorner
+from chess.pieces.king import King
+from chess.pieces.knight import Knight
+from chess.pieces.pawn import Pawn
 
 BOARD_OFFSET = 21
+
+
+class BoardStateList(list):
+    """This class helps with keeping the indexes in bound."""
+
+    def __init__(self, *args, **kwargs):
+        """Init."""
+        super(BoardStateList, self).__init__(args[0])
+
+    def __setitem__(self, indexes, o):
+        """Made to handle tuples are indexes."""
+        self[indexes[0]][indexes[1]] = o
+
+    def __getitem__(self, indexes):
+        """Handle out of bounds board indexes."""
+        if type(indexes) is int:
+            return super().__getitem__(indexes)
+        for i in indexes:
+            if not 0 <= i <= 7:
+                return Piece.INVALID
+        return super().__getitem__(indexes[0]).__getitem__(indexes[1])
 
 
 class Board:
@@ -15,7 +43,7 @@ class Board:
     info about the piece that either occupies it there or not.
     """
 
-    def __init__(self, fen: str, size: int):
+    def __init__(self, fen: str):
         """Construct all the necessary attributes for the board object.
 
         Parameters
@@ -24,24 +52,125 @@ class Board:
             A way to represent the board state.
         """
         self.fen: str = fen
-        self.size = size
-        # TODO Not sure if this type is correct.
-        self.state: "np.uint" = self.setup_board_state()
-        self.get_state_from_fen(fen)  # This assign does nothing here its just for readability.
-        self.w_pieces = self.get_pieces(is_whites=True)
-        self.w_king, self.w_pawn, self.w_bishop, self.w_knight, self.w_rook, self.w_queen = self.w_pieces.values()
-        self.b_pieces = self.get_pieces(is_whites=False)
-        self.pieces_movesets = Piece.move_sets()
-        self.b_king, self.b_pawn, self.b_bishop, self.b_knight, self.b_rook, self.b_queen = self.b_pieces.values()
-        print(self)
+        self.state: BoardStateList = self.setup_board_state()
+        # This assign does nothing here its just for readability.
+        self.state, pieces = self.fen_to_state_and_pieces(fen)
 
-    @staticmethod
-    def normalize_index(index: int) -> int:
-        """Calculate the normilized version of the index e.g: 0 -> 21, 16 -> 41."""
-        row = index // 8
-        return (index + 21) + (row * 2)
+        # Get White Lists
+        self.w_pieces = self.organize_pieces(pieces, is_whites=True)
 
-    def get_pieces(self, is_whites: bool) -> Dict[int, List[int]]:
+        # Get Black Lists
+        self.b_pieces = self.organize_pieces(pieces, is_whites=False)
+
+        self.all_pieces = {Piece.WHITE: self.w_pieces,
+                           Piece.BLACK: self.b_pieces}
+
+        # Kings
+        self.kings = {Piece.WHITE: self.w_pieces[Piece.KING | Piece.WHITE][0],
+                      Piece.BLACK: self.b_pieces[Piece.KING | Piece.BLACK][0]}
+
+        self.dead_pieces: List[Piece] = []
+        # print(self)
+        self.correct_format_print()
+
+    def try_removing_castling(self, moving_piece):
+        """Remove castling privileges depending the moving piece."""
+        if isinstance(moving_piece, Rook):
+            # Check if the rook moved was in the Right half of the board.
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_RIGHT, RookCorner.TOP_RIGHT):
+                self.kings[moving_piece.color].r_castle['is_valid'] = False
+
+            # Check if the rook moved was in the Left half of the board.
+            if moving_piece.rook_corner in (RookCorner.BOTTOM_LEFT, RookCorner.TOP_LEFT):
+                self.kings[moving_piece.color].l_castle['is_valid'] = False
+
+    def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
+        """Transform to a desired Piece.
+        
+        Parameters
+        ----------
+        piece_code : int
+            Piece code that describes the piece type and color.
+
+        Raises
+        ------
+        Exception
+            [description]
+        """
+
+        # if piece_code
+
+        # Create the Piece that the pawn will transform too
+        PieceConstructor = Board.piece_classes(piece_code)
+        transformed_piece = PieceConstructor(piece_code, moving_pawn.coords)
+        transformed_piece.times_moved = moving_pawn.times_moved
+
+        # Update Pieces
+        if moving_pawn.color == Piece.WHITE:
+            self.w_pieces[moving_pawn.piece_code].remove(moving_pawn)
+            self.w_pieces[transformed_piece.piece_code].append(transformed_piece)
+        else:
+            self.b_pieces[moving_pawn.piece_code].remove(moving_pawn)
+            self.b_pieces[transformed_piece.piece_code].append(transformed_piece)
+
+        
+    def kill_piece(self, dead_piece: Piece):
+        self.dead_pieces.append(dead_piece)
+        dead_piece.is_dead = True
+
+        # Remove the dead piece from the piece lists
+        if dead_piece.color == Piece.WHITE:
+            self.w_pieces[dead_piece.piece_code].remove(dead_piece)
+        else:
+            self.b_pieces[dead_piece.piece_code].remove(dead_piece)
+
+    def simulated_board_state(self):
+        """Given a board state it will return a 'simulated' board state.
+
+        This will allows us to affect the board state without actually changing it.
+        """
+        # Slower but more compact
+        return BoardStateList([[self.state[j, i] for i in range(8)] for j in range(8)])
+
+    def get_piece(self, coords: tuple) -> Piece:
+        """Given a coords it will return the piece that is there."""
+        piece_code = self.state[coords]
+        return self.get_piece_obj(coords, piece_code)
+
+    def get_piece_obj(self, coords: tuple, piece_code: int):
+        """Get the piece obj.
+
+        Find the piece obj that corrisponds to
+        coords and the piece code that was given.
+
+        Parameters
+        ----------
+        coords : tuple
+            The coords of the piece obj.
+        piece_code : int
+            The piece code of the piece.
+
+        Returns
+        -------
+        Piece
+            The piece that was found.
+        """
+        if piece_code == Piece.EMPTY:
+            return None
+
+        color = Piece.get_colour(piece_code)
+        if color == Piece.WHITE:
+            pieces = [piece for piece in self.w_pieces[piece_code]
+                      if piece.coords == coords and piece.piece_code == piece_code]
+        else:
+            pieces = [piece for piece in self.b_pieces[piece_code]
+                      if piece.coords == coords and piece.piece_code == piece_code]
+
+        if len(pieces) > 1 or not pieces:
+            raise Exception("Found the same piece obj twice!")
+        return pieces[0]
+
+    def organize_pieces(self, all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
         """Given a team color it will return that team's pieces.
 
         Parameters
@@ -52,32 +181,127 @@ class Board:
         Returns
         -------
         Dict[int, List[int]]
-            A map of the existing (white or black) pieces separated in lists
-            based on their type.
+            A map of the existing (white or black) pieces
+            separated in lists based on their type.
         """
-        colour = Piece.WHITE if is_whites else Piece.BLACK
-        pieces: Dict[int, List[int]] = {Piece.KING | colour: list(),
-                                        Piece.PAWN | colour: list(),
-                                        Piece.BISHOP | colour: list(),
-                                        Piece.KNIGHT | colour: list(),
-                                        Piece.ROOK | colour: list(),
-                                        Piece.QUEEN | colour: list()}
+        color = Piece.WHITE if is_whites else Piece.BLACK
+        pieces: Dict[int, List[int]] = {Piece.KING | color: list(),
+                                        Piece.PAWN | color: list(),
+                                        Piece.BISHOP | color: list(),
+                                        Piece.KNIGHT | color: list(),
+                                        Piece.ROOK | color: list(),
+                                        Piece.QUEEN | color: list()}
 
-        for i, pc in enumerate(self.state):
-            if pc != Piece.EMPTY and Piece.get_colour(pc) == colour:
-                pieces[pc].append(i)
+        for piece in all_pieces:
+            if isinstance(piece, Piece) and piece.color == color:
+                pieces[piece.piece_code].append(piece)
         return pieces
 
-    def setup_board_state(self) -> np.ndarray:
-        """Do the setup by making boundries (0-21 98-120) in the board and the board itself."""
-        state: np.ndarray = np.zeros((self.size), dtype="uint8")
-        for i in range(0, 21):
-            state[i] |= Piece.INVALID
-        for i in range(98, len(state)):
-            state[i] |= Piece.INVALID
-        return state
+    @staticmethod
+    def make_piece(piece_code: int, coords: tuple) -> Any:
+        """Create a piece object based on the given piece code.
 
-    def get_state_from_fen(self, fen: str) -> np.ndarray:
+        Parameters
+        ----------
+        piece_code : int
+            Piece code that describes the piece type and color.
+        """
+        PieceConstructor = Board.piece_classes(piece_code)
+        return PieceConstructor(piece_code, coords)
+
+    @staticmethod
+    def piece_classes(piece_code: int) -> dict:
+        """Map in a dictionary all the functions for the pieces.
+
+        Returns
+        -------
+        dict
+            Return all the functions for each piece.
+        """
+        ptype = Piece.get_type(piece_code)
+        return {Piece.KING: King,
+                Piece.PAWN: Pawn,
+                Piece.BISHOP: Bishop,
+                Piece.KNIGHT: Knight,
+                Piece.ROOK: Rook,
+                Piece.QUEEN: Queen}[ptype]
+
+    def setup_board_state(self) -> np.ndarray:
+        """Do the setup for the state of the board."""
+        return BoardStateList([[Piece.EMPTY for i in range(8)] for j in range(8)])
+
+    def are_coords_under_attack(self, coords_list, enemy_color):
+        """Check if any of the given coords are being attacked.
+
+        Parameters
+        ----------
+        coords_list : List[Tuple[int, int]]
+            A list of coords to check if they are being attacked.
+        enemy_color : int
+            The color of the enemy pieces.
+        enemies_pieces : List[Piece]
+            The enemy pieces.
+
+        Returns
+        -------
+        bool
+            Returns true if any of the coords are being attacked.
+        """
+        # Check if the king is in check from the rest of the pieces
+        enemy_moves = Piece.get_enemy_possible_coords(self.all_pieces[enemy_color], self.state)
+        return any(tuple(coords) in enemy_moves for coords in coords_list)
+
+    def are_coords_empty(self, coords_list):
+        """Check if ALL the given coords are empty."""
+        return all(self.state[coords] == Piece.EMPTY for coords in coords_list)
+    
+    def state_and_pieces_to_fen(self) -> str:
+        """Given the board state it produces the fen string.
+
+        Parameters
+        ----------
+        self : Board
+            The board and the state init.
+
+        Returns
+        -------
+        str
+            The fen string.
+        """
+        pos: int = 0
+        fen: str = ""
+        for row in self.state:
+            for piece_code in row:
+                ptype = Piece.get_type(piece_code)
+                colour = Piece.get_colour(piece_code)
+                if ptype == Piece.EMPTY:
+                    pos += 1
+                elif pos > 0:
+                    fen += str(pos)
+                    pos = 0
+
+                if ptype == Piece.PAWN:
+                    fen += 'P' if colour == Piece.WHITE else 'p'
+                elif ptype == Piece.BISHOP:
+                    fen += 'B' if colour == Piece.WHITE else 'b'
+                elif ptype == Piece.KNIGHT:
+                    fen += 'N' if colour == Piece.WHITE else 'n'
+                elif ptype == Piece.ROOK:
+                    fen += 'R' if colour == Piece.WHITE else 'r'
+                elif ptype == Piece.KING:
+                    fen += 'K' if colour == Piece.WHITE else 'k'
+                elif ptype == Piece.QUEEN:
+                    fen += 'Q' if colour == Piece.WHITE else 'q'
+            else:
+                if pos > 0:
+                    fen += str(pos)
+                    pos = 0
+            fen += "/"
+
+        # Remove the symbol '/'
+        return fen[:-1]
+
+    def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
 
         Parameters
@@ -87,8 +311,10 @@ class Board:
 
         Returns
         -------
-        numpy.array(dtype="uint8")
-            A numpy array of unsigned 8 bit ints.
+        BoardStateList
+            A custom object which is the same as a list with
+            the exception that is made to check if the indexes
+            are in bound of the board.
 
         Raises
         ------
@@ -98,14 +324,12 @@ class Board:
         # np.full((120), 32, dtype="uint8")
         # Adding the error bits should be done when creating the board obj.
         # The pos could start from 21 and stop at 98
-        pos = 21
+        pieces: list = []
+        pos: int = 0
         for ch in fen:
-            if pos > 98:
+            if pos > 63:
                 raise ValueError(f"Exited board boundries: {pos}")
-            # Skip the invalid positions.
-            elif (pos + 1) % 10 == 0:
-                pos += 2
-                continue
+
             # Skip that many tiles.
             if ch in "12345678":
                 pos += int(ch)
@@ -113,11 +337,7 @@ class Board:
 
             # Find the color of the piece.
             piece_code = 0b0
-            if ch.isupper():
-                piece_code |= Piece.WHITE
-            else:
-                piece_code |= Piece.BLACK
-
+            piece_code |= Piece.WHITE if ch.isupper() else Piece.BLACK
             # Find the type of the piece.
             chl = ch.lower()
             if chl == 'k':
@@ -138,10 +358,14 @@ class Board:
                 raise ValueError(f"Unkown symbol in fen: {chl}")
 
             # Occupy the pos.
-            self.state[pos] = piece_code
+            row = pos // 8
+            col = pos - row * 8
+
+            pieces.append(Board.make_piece(piece_code, (row, col)))
+            self.state[row, col] = piece_code
             pos += 1
 
-        return self.state
+        return self.state, pieces
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:
@@ -161,43 +385,43 @@ class Board:
             # me to row/col pou exeis
             c = index % 8
             r = index - c
-            if c == _col:
-                return index
-            elif r != -1:
+            if c == _col or r != -1:
                 return index
         return -1
 
     # FIXME Needs refactoring because of the new board representation.
-    def find_tile_from_piece(self, piece_code: int, row: int = -1, col: str = ''):
-        colour, type = Piece.get_colour_and_type(piece_code)
+    # def find_tile_from_piece(self, piece_code: int, row: int = -1, col: str = ''):
+    #     colour, type = Piece.get_colour_and_type(piece_code)
 
-        if row != -1:
-            inv_row = (8 - row) * 8
-            for i, index in enumerate(range(inv_row, inv_row + 8)):
-                pc = self.state[Board.normalize_index(index)]
-                if (Piece.get_colour_and_type(pc)) == (colour, type):
-                    return inv_row + i
-        elif col != '':
-            offset = Board.get_number_for_col(col)
-            for i, pc in enumerate(self.state[::8 + offset]):
-                if (Piece.get_colour_and_type(pc)) == (colour, type):
-                    return (i * 8) + offset
+    #     if row != -1:
+    #         inv_row = (8 - row) * 8
+    #         for i, index in enumerate(range(inv_row, inv_row + 8)):
+    #             pc = self.state[Board.normalize_index(index)]
+    #             if (Piece.get_colour_and_type(pc)) == (colour, type):
+    #                 return inv_row + i
+    #     elif col != '':
+    #         offset = Board.get_number_for_col(col)
+    #         for i, pc in enumerate(self.state[::8 + offset]):
+    #             if (Piece.get_colour_and_type(pc)) == (colour, type):
+    #                 return (i * 8) + offset
 
-        for i, pc in enumerate(self.state):
-            if (Piece.get_colour_and_type(pc)) == (colour, type):
-                return i
+    #     for i, pc in enumerate(self.state):
+    #         if (Piece.get_colour_and_type(pc)) == (colour, type):
+    #             return i
 
-        return -1
+    #     return -1
 
     # FIXME Needs refactoring because of the new board representation.
     @staticmethod
     def find_tile_from_str(row: str, col: str) -> int:
+        """Find the tile given the row and col names."""
         _col: int = Board.get_number_for_col(col)
         _row: int = (8 - int(row))
         return (_row * 8) + _col
 
     @staticmethod
     def get_number_for_col(col: str) -> int:
+        """Get the corrisponding number based on the given col name."""
         if col == 'a':
             return 0
         elif col == 'b':
@@ -217,21 +441,31 @@ class Board:
         else:
             raise ValueError(f"Wrong value for collumn: {col}")
 
-    # FIXME Needs refactoring because of the new board representation.
     def __str__(self):
         """Print the board state."""
-        x = 0
-        print('\t\t\t\t     BOARD')
-        print('      0     1     2     3     4     5     6     7')
-        print(x, end='   ')
-        i = 0
-        for index in range(21, 99):
-            if i % 8 == 0 and i != 0:
-                x += 1
-                print()
-                print(x, end='   ')
-                i = 0
-            elif index % 10 != 0:
-                print(f'[ {Piece.find_symbol_for_piece(self.state[index])} ]', end=' ')
-                i += 1
+        print('\n      0     1     2     3     4     5     6     7')
+        # x = 0
+        # print(x, end='   ')
+        for row in range(8):
+            print()
+            print(row, end='   ')
+            for col in range(8):
+                piece_code = self.state[row, col]
+                print(
+                    f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
+        print(f'\n{self.state_and_pieces_to_fen()}')
+        return ' '
+
+    def correct_format_print(self):
+        """Print the board state in correct format."""
+        # x = 0
+        # print(x, end='   ')
+        for row in range(8, 0, -1):
+            print()
+            print(row, end='   ')
+            for col in range(8, 0, -1):
+                piece_code = self.state[8 - row, 8 - col]
+                print(
+                    f"[ {Piece.get_symbol(piece_code)} ]", end=' ')
+        print('\n\n      a     b     c     d     e     f     g     h\n\n')
         return ' '

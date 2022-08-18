@@ -1,6 +1,7 @@
-from chess.piece import Piece
-from typing import Set
-from chess.board import Board
+"""Anything related to a move how it was executed."""
+from typing import Set, Tuple, Union
+import re
+# from chess.board import Board
 
 
 def WRONG_INPUT(u_input, msg="Wrong move input:"):
@@ -15,9 +16,10 @@ TILE_NAMES = "abcdefgh"
 """ We should hardcode this values so we can evaluate
     faster which moves are in-bounds or not. """
 INVALID_TILES: Set[int] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 30, 40,
-    60, 70, 80, 90, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100, 101, 102, 103, 104, 105, 106, 107,
-    108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, }
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    16, 17, 18, 20, 30, 40, 60, 70, 80, 90, 19, 29, 39, 49,
+    59, 69, 79, 89, 99, 100, 101, 102, 103, 104, 105, 106,
+    107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119}
 
 
 class MoveTypes:
@@ -38,30 +40,143 @@ class MoveTypes:
     ERROR_MASK = 0b11000
 
 
+class MoveDirection:
+    """An enum class that helps showing the direction of a move."""
+
+    # Horizontal directions
+    UP = 0
+    DOWN = 1
+    LEFT = 2
+    RIGHT = 3
+
+    # Diagonal directions
+    UP_LEFT = 4
+    UP_RIGHT = 5
+    DOWN_LEFT = 6
+    DOWN_RIGHT = 7
+
+
 class Move:
     """Holds info about the move made."""
 
-    def __init__(self, piece_code: int, start_tile: int, end_tile: int, move_code: int, read_form: str):
-        """Components that indentify a move.
+    def __init__(self, move_num: int, start_coords: tuple, end_coords: tuple, moving_piece, taken_piece, castling_info: Union[dict, None], pawn_transformed_to):
+        """Components to indentify a move."""
+        self.move_num = move_num
+        self.start_coords = start_coords
+        self.end_coords = end_coords
+        self.moving_piece = moving_piece
+        self.taken_piece = taken_piece
+        self.castling_info: dict = castling_info
 
-        Parameters
-        ----------
-        piece_code : unit8
-            A binary way to represent our pieces.
-        start_tile : int
-            The starting pos of the piece.
-        end_tile : int
-            The ending pos of the piece.
-        move_code : uint8
-            A binary way to represent our move types.
-        read_form : str
-            Our move in string readable way.
-        """
-        self.piece_code = piece_code
-        self.start_tile = start_tile
-        self.end_tile = end_tile
-        self.move_code = move_code
-        self.read_form = read_form
+    @staticmethod
+    def get_direction_func(direction: MoveDirection):
+        """Return the function that corrisponds to the move direction."""
+        return {
+            MoveDirection.UP: Move.up,
+            MoveDirection.DOWN: Move.down,
+            MoveDirection.LEFT: Move.left,
+            MoveDirection.RIGHT: Move.right,
+            MoveDirection.UP_LEFT: Move.up_left,
+            MoveDirection.UP_RIGHT: Move.up_right,
+            MoveDirection.DOWN_LEFT: Move.down_left,
+            MoveDirection.DOWN_RIGHT: Move.down_right
+        }[direction]
+
+    # Horizontal directions ###############
+    @staticmethod
+    def up(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1]
+
+    @staticmethod
+    def down(coords, i) -> Tuple[int]:
+        """Return a move that has a direction downwards."""
+        return coords[0] + i, coords[1]
+
+    @staticmethod
+    def right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction right."""
+        return coords[0], coords[1] + i
+
+    @staticmethod
+    def left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction left."""
+        return coords[0], coords[1] - i
+
+    # Diagonal directions ###############
+    @staticmethod
+    def up_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] - i
+
+    @staticmethod
+    def up_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] - i, coords[1] + i
+
+    @staticmethod
+    def down_left(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] - i
+
+    @staticmethod
+    def down_right(coords, i) -> Tuple[int]:
+        """Return a move that has a direction upwards."""
+        return coords[0] + i, coords[1] + i
+
+    # TODO: This is outdated.
+    # @staticmethod
+    # def find_move_direction(start: int, end: int):
+    #     diff = end - start
+
+    #     if (diff % 7) == 0:
+    #         steps = diff // 7
+    #         # UpRight - DownLeft
+    #         return -7 if steps < 0 else 7
+    #     elif (diff % 8) == 0:
+    #         steps = diff // 8
+    #         if steps == 0:
+    #             # Left - Right
+    #             return -1 if diff < 0 else 1
+    #         else:
+    #             # Up - Down
+    #             return -8 if steps < 0 else 8
+    #     elif (diff % 9) == 0:
+    #         steps = diff // 9
+    #         # UpLeft - DownRight
+    #         return -9 if steps < 0 else 9
+
+
+class MoveDecoder:
+    """Decodes a move string to a move object."""
+
+    # def __init__(self, input_str: str):
+    #     """Components to indentify a move.
+
+    #     Parameters
+    #     ----------
+    #     input_str : str
+    #         The inputed move string.
+    #     """
+    #     self.input_str = input_str
+    #     self.coords = self.__parse_coords()
+
+    @staticmethod
+    def parse_coords(input_str) -> Tuple[int, int]:
+        if re.search("[a-h][1-8]{1}", input_str):
+            # We have a valid move.
+            start_tile = Move.get_tile_coords(input_str[:2])
+            end_tile = Move.get_tile_coords(input_str[2:])
+            return start_tile, end_tile
+        return Exception("Invalid move input.")
+
+    @staticmethod
+    def get_tile_coords(tile_str):
+        """Get the tile coordinates from a tile string."""
+        # We parse the coords in the way our array is set up.
+        x = 8 - int(tile_str[1])
+        y = ord(tile_str[0]) - ord('a')
+        return x, y
 
     def __str__(self):
         return (
@@ -99,40 +214,40 @@ class Move:
 
     # TODO A regex way should be way more readable but this works for now.
 
-    @staticmethod
-    def decode_to_move(move_str: str, board: Board, is_white_turn: bool) -> 'Move':
-        # Because of the case for e.g: "exf4"
-        # we can't be sure if the piece is black or not
-        piece_code = Piece.EMPTY
-        move_code = MoveTypes.NORMAL
-        start_tile = -1
-        end_tile = -1
+    # @staticmethod
+    # def decode_to_move(move_str: str, board, is_white_turn: bool) -> 'Move':
+    #     # Because of the case for e.g: "exf4"
+    #     # we can't be sure if the piece is black or not
+    #     piece_code = Piece.EMPTY
+    #     move_code = MoveTypes.NORMAL
+    #     start_tile = -1
+    #     end_tile = -1
 
-        # Find colour
-        if Move.is_symbol_turn(move_str, is_white_turn) is True:
-            piece_code |= Piece.WHITE if is_white_turn else Piece.BLACK
+    #     # Find colour
+    #     if Move.is_symbol_turn(move_str, is_white_turn) is True:
+    #         piece_code |= Piece.WHITE if is_white_turn else Piece.BLACK
 
-        # Find piece type
-        if move_str[0].lower() in PIECE_SYMBOLS:
-            piece_code |= Piece.find_piece_from_symbol(move_str[0].lower())
-        else:
-            piece_code |= Piece.PAWN
+    #     # Find piece type
+    #     if move_str[0].lower() in PIECE_SYMBOLS:
+    #         piece_code |= Piece.find_piece_from_symbol(move_str[0].lower())
+    #     else:
+    #         piece_code |= Piece.PAWN
 
-        if move_str[1] in TILE_NAMES:
-            start_tile = board.get_tile_from_piece(piece_code, col=move_str[1])
+    #     if move_str[1] in TILE_NAMES:
+    #         start_tile = board.get_tile_from_piece(piece_code, col=move_str[1])
 
-        for i, ch in enumerate(move_str[1:]):
-            move_code, is_action = Move.check_symbol_for_action(move_code, ch)
-            if is_action is False:
-                if ch in TILE_NUMBERS:
-                    if start_tile == -1:
-                        start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-                    end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-                # We can have a piece symbol only in the very first pos.
-                elif ch not in (TILE_NUMBERS + TILE_NAMES):
-                    raise WRONG_INPUT(move_str)
+    #     for i, ch in enumerate(move_str[1:]):
+    #         move_code, is_action = Move.check_symbol_for_action(move_code, ch)
+    #         if is_action is False:
+    #             if ch in TILE_NUMBERS:
+    #                 if start_tile == -1:
+    #                     start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+    #                 end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
+    #             # We can have a piece symbol only in the very first pos.
+    #             elif ch not in (TILE_NUMBERS + TILE_NAMES):
+    #                 raise WRONG_INPUT(move_str)
 
-        return Move(piece_code, start_tile, end_tile, move_code, move_str)
+    #     return Move(piece_code, start_tile, end_tile, move_code, move_str)
 
     @staticmethod
     def check_symbol_for_action(move_code: int, ch: str):
@@ -159,29 +274,6 @@ class Move:
             The new filtered set without the out of bounds tiles.
         """
         return moves - INVALID_TILES
-
-    # TODO check if this function works correctly.
-    # Also make a direction enum or something.
-    @staticmethod
-    def find_move_direction(start: int, end: int):
-        diff = end - start
-
-        if (diff % 7) == 0:
-            steps = diff // 7
-            # UpRight - DownLeft
-            return -7 if steps < 0 else 7
-        elif (diff % 8) == 0:
-            steps = diff // 8
-            if steps == 0:
-                # Left - Right
-                return -1 if diff < 0 else 1
-            else:
-                # Up - Down
-                return -8 if steps < 0 else 8
-        elif (diff % 9) == 0:
-            steps = diff // 9
-            # UpLeft - DownRight
-            return -9 if steps < 0 else 9
 
     @staticmethod
     def add_action(move_code: int, move_action: int) -> int:
