@@ -55,7 +55,7 @@ class Board:
         self.state: BoardStateList = self.setup_board_state()
 
         # This assign does nothing here its just for readability.
-        self.state, pieces, self.colour_to_move = self.fen_to_state_and_pieces(fen)
+        self.state, pieces, self.colour_to_move, pos_castle_sides = self.fen_to_state_and_pieces(fen)
 
         # Get White Lists
         self.w_pieces = self.organize_pieces(pieces, is_whites=True)
@@ -252,7 +252,8 @@ class Board:
             Returns true if any of the coords are being attacked.
         """
         # Check if the king is in check from the rest of the pieces
-        enemy_moves = Piece.get_enemy_possible_coords(self.all_pieces[enemy_color], self.state)
+        enemy_moves = Piece.get_enemy_possible_coords(
+            self.all_pieces[enemy_color], self.state)
         return any(tuple(coords) in enemy_moves for coords in coords_list)
 
     def are_coords_empty(self, coords_list):
@@ -308,6 +309,8 @@ class Board:
         fen = fen[:-1] + colour_turn
         return fen
 
+    # def __fen_find_
+
     def fen_to_state_and_pieces(self, fen: str) -> BoardStateList:
         """Given a fen it will return the board state.
 
@@ -331,6 +334,9 @@ class Board:
         pieces: list = []
         colour_turn: int = Piece.WHITE
         pos: int = 0
+        colour_pos: int = 0
+
+        # Parse the pieces and the tiles.
         for i, ch in enumerate(fen):
             # Needs a regex to check if the fen is valid
             # if pos > 63:
@@ -358,8 +364,12 @@ class Board:
                 piece_code |= Piece.ROOK
             elif chl == 'q':
                 piece_code |= Piece.QUEEN
-            elif chl in ['/', ' ', 'w']:
+            elif chl == '/':
                 continue
+            elif chl == ' ':
+                colour_pos = i
+                break
+            # TODO Should check with a regex.
             else:
                 raise ValueError(f"Unkown symbol in fen: {chl}")
             row = pos // 8
@@ -367,7 +377,47 @@ class Board:
             pieces.append(Board.make_piece(piece_code, (row, col)))
             self.state[row, col] = piece_code
             pos += 1
-        return self.state, pieces, colour_turn
+
+        # Parse the colours
+        castling_pos: int = 0
+        for i, ch in enumerate(fen[colour_pos + 1:]):
+            if ch == ' ':
+                castling_pos = i
+                break
+            elif ch == 'b':
+                colour_turn = Piece.BLACK
+            elif ch == 'w':
+                colour_turn = Piece.WHITE
+
+        # Parse castling positions
+        enpassan_pos: int = 0
+        pos_castle_sides: Dict[List[bool], List[bool]] = {
+            "w": [False, False], "b": [False, False]}
+        for i, ch in enumerate(fen[castling_pos + 1:]):
+            if ch == '-':
+                enpassan_pos = i
+                break
+
+            elif ch == 'K':
+                # King side == Right side
+                pos_castle_sides['w'][1] = True
+            elif ch == 'Q':
+                # Queen side == Left side
+                pos_castle_sides['w'][0] = True
+            elif ch == 'k':
+                pos_castle_sides['b'][0] = True
+            elif ch == 'q':
+                pos_castle_sides['b'][1] = True
+        # Parse enpassan positions
+        # halfmove_pos: int = 0
+        # for i, ch in enumerate(fen[enpassan_pos + 1:]):
+        #     if ch == '-':
+        #         halfmove_pos = i
+        #         break
+        #     elif ch in 'abcdefgh':
+        #         print('h')
+
+        return self.state, pieces, colour_turn, pos_castle_sides
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = '') -> int:

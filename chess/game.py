@@ -274,7 +274,7 @@ class Game:
 
         Returns
         -------
-        dict
+        Dict[List[int], List[int]]
             If the moving piece is a King and the move was castling, return the castling info.
         """
         self.board.try_removing_castling(moving_piece)
