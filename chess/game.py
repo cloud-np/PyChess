@@ -11,8 +11,10 @@ from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
 
 
-STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
-STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b"
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 0 1"
+PROM_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - 0 1"
+STARTING_FEN = "rnbqk2r/ppp2ppp/3bpn2/3p4/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq 0 1"
+# STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b"
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 
@@ -68,14 +70,14 @@ class Game:
         Parameters
         ----------
         start_coords : int
-            [description]
+            Starting coords of the move.
         end_coords : int
-            [description]
+            Ending coords of the move.
 
         Returns
         -------
         bool
-            [description]
+            Whether or not the move is valid.
         """
         piece = self.board.get_piece(start_coords)
         if piece == Piece.EMPTY:
@@ -98,9 +100,9 @@ class Game:
 
     def get_all_possible_moves(self) -> set:
         """Get all the possible moves."""
-        colors_turn = Piece.WHITE if self.is_white_turn else Piece.BLACK
+        # colors_turn = Piece.WHITE if  else Piece.BLACK
         moves = []
-        for piece_code, piece_list in self.board.all_pieces[colors_turn].items():
+        for piece_code, piece_list in self.board.all_pieces[self.board.colour_to_move].items():
             for piece in piece_list:
                 coords_set = set()
                 coords_set = coords_set | piece.get_possible_coords(self.board.state)
@@ -255,7 +257,7 @@ class Game:
         self.moves_history.append(move)
 
         # Change the turn.
-        self.is_white_turn = not self.is_white_turn
+        self.is_white_turn = self.board.colour_to_move == Piece.WHITE
         return move
 
     def __update_board(self, old_coords, new_coords, moving_piece, taken_piece) -> Dict[List[int], List[int]]:
@@ -277,7 +279,10 @@ class Game:
         Dict[List[int], List[int]]
             If the moving piece is a King and the move was castling, return the castling info.
         """
-        self.board.try_removing_castling(moving_piece)
+        # Change the colour that has to move next.
+        self.board.colour_to_move = Board.swap_colours(self.board.colour_to_move)
+
+        self.board.try_updating_castling(moving_piece)
         # Since the move is registered, the opposite team plays next.
         self.board.colour_to_move: int = Piece.BLACK if self.is_white_turn else Piece.WHITE
 

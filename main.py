@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
     # g = Game(player1="Human", player2="PC")
     # g = Game(player1="Human", player2="Human")
-    g = Game(player1="Human", player2="PC", visuals=False)
+    g = Game(player1="Human", player2="Human", visuals=True)
     # g = Game(visuals=False)
     # move = Move.decode_to_move("Raxd1", g.board, g.is_white_turn)
     # print('\n')
