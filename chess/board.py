@@ -42,7 +42,7 @@ class Fen:
         board_state: BoardStateList,
         colour_to_move: Literal[Piece.WHITE, Piece.BLACK],
         caslting: Union[Dict[List[bool], List[bool]], str] = "-",
-        enpassan: Union[List[int], str] = "-",
+        en_passant: Union[List[int], None] = "-",
         halfmove_clock: int = 0,
         fullmove_number: int = 1,
     ) -> str:
@@ -52,7 +52,13 @@ class Fen:
         # fen = fen[:-1] + " " + self.get_castling_fen() + " " + self.get_en_passant_fen() + " " + str(self.half_move_clock) + " " + str(self.full_move_number)
         colour_f: str = " w " if colour_to_move == Piece.WHITE else " b "
         cast_f: str = Fen.__get_castling_fen(caslting) if caslting != "-" else "-"
-        return board_state_f + colour_f + cast_f
+        en_passant_fen: str = Fen.__get_en_passant_fen(en_passant)
+        return board_state_f + colour_f + cast_f + " " + en_passant_fen
+    
+    @staticmethod
+    def __get_en_passant_fen(en_passant: Union[List[int], str]) -> str:
+        """Get the en passant fen."""
+        return "-" if en_passant is None else str(en_passant[0]) + str(en_passant[1])
 
     @staticmethod
     def __get_castling_fen(castling_rights: Dict[List[bool], List[bool]]) -> str:
@@ -165,6 +171,12 @@ class Fen:
         return castling
 
     @staticmethod
+    def create_en_passant_coords(en_passant_fen: str) -> Union[List[int], None]:
+        if en_passant_fen == "-":
+            return None
+        return Board.get_number_for_col(en_passant_fen[0]), int(en_passant_fen[1])
+
+    @staticmethod
     def translate_to_state(state: BoardStateList, fen: str):
         """Based on the given fen
 
@@ -192,6 +204,7 @@ class Fen:
                 board_state_fen,
                 colour_to_move_fen,
                 castling_fen,
+                en_passant_fen,
                 halfmove_fen,
                 fullmove_fen,
             ) = fen.split()
@@ -203,17 +216,9 @@ class Fen:
             Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
         )
         castling: Dict[List[bool], List[bool]] = Fen.create_castling_info(castling_fen)
+        en_passant_coords: Union[List[int], None] = Fen.create_en_passant_coords(en_passant_fen)
 
-        # Parse enpassan positions
-        # halfmove_pos: int = 0
-        # for i, ch in enumerate(fen[enpassan_pos + 1:]):
-        #     if ch == '-':
-        #         halfmove_pos = i
-        #         break
-        #     elif ch in 'abcdefgh':
-        #         print('h')
-
-        return state, pieces, colour_to_move, castling
+        return state, pieces, colour_to_move, castling, en_passant_coords
 
 
 class Board:
@@ -241,6 +246,7 @@ class Board:
             pieces,
             self.colour_to_move,
             self.castling_rights,
+            self.en_passant_coords,
         ) = Fen.translate_to_state(self.state, fen)
 
         # Get White Lists
@@ -507,28 +513,20 @@ class Board:
         _col: int = Board.get_number_for_col(col)
         _row: int = 8 - int(row)
         return (_row * 8) + _col
+    
+    @staticmethod
+    def get_col_for_number(number: int) -> str:
+        return chr(ord('a') + number)
 
     @staticmethod
     def get_number_for_col(col: str) -> int:
         """Get the corrisponding number based on the given col name."""
-        if col == "a":
-            return 0
-        elif col == "b":
-            return 1
-        elif col == "c":
-            return 2
-        elif col == "d":
-            return 3
-        elif col == "e":
-            return 4
-        elif col == "f":
-            return 5
-        elif col == "g":
-            return 6
-        elif col == "h":
-            return 7
-        else:
+
+        # 97 because ord('a') == 97
+        num_col = ord(col) - 97
+        if not 0 <= num_col < 8:
             raise ValueError(f"Wrong value for collumn: {col}")
+        return num_col
 
     def __str__(self):
         """Print the board state."""
@@ -538,7 +536,7 @@ class Board:
             for col in range(8):
                 piece_code = self.state[row, col]
                 print(f"[ {Piece.get_symbol(piece_code)} ]", end=" ")
-        print(f"\n{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights)}")
+        print(f"\n{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)}")
         return " "
 
     def correct_format_print(self):
@@ -549,5 +547,5 @@ class Board:
                 piece_code = self.state[8 - row, 8 - col]
                 print(f"[ {Piece.get_symbol(piece_code)} ]", end=" ")
         print("\n\n      a     b     c     d     e     f     g     h\n\n")
-        print(f"{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights)}\n\n")
+        print(f"{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)}\n\n")
         return " "

@@ -11,9 +11,9 @@ from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
 
 
-STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq 0 1"
+STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 PROM_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - 0 1"
-STARTING_FEN = "rnbqk2r/ppp2ppp/3bpn2/3p4/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq 0 1"
+STARTING_FEN = "rnbqk2r/ppp2ppp/3bpn2/3p4/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq - 0 1"
 # STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b"
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 

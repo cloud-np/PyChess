@@ -224,43 +224,6 @@ class MoveDecoder:
             raise WRONG_INPUT(move_str, msg="Wrong piece team entered.")
         return True
 
-    # TODO A regex way should be way more readable but this works for now.
-
-    # @staticmethod
-    # def decode_to_move(move_str: str, board, is_white_turn: bool) -> 'Move':
-    #     # Because of the case for e.g: "exf4"
-    #     # we can't be sure if the piece is black or not
-    #     piece_code = Piece.EMPTY
-    #     move_code = MoveTypes.NORMAL
-    #     start_tile = -1
-    #     end_tile = -1
-
-    #     # Find colour
-    #     if Move.is_symbol_turn(move_str, is_white_turn) is True:
-    #         piece_code |= Piece.WHITE if is_white_turn else Piece.BLACK
-
-    #     # Find piece type
-    #     if move_str[0].lower() in PIECE_SYMBOLS:
-    #         piece_code |= Piece.find_piece_from_symbol(move_str[0].lower())
-    #     else:
-    #         piece_code |= Piece.PAWN
-
-    #     if move_str[1] in TILE_NAMES:
-    #         start_tile = board.get_tile_from_piece(piece_code, col=move_str[1])
-
-    #     for i, ch in enumerate(move_str[1:]):
-    #         move_code, is_action = Move.check_symbol_for_action(move_code, ch)
-    #         if is_action is False:
-    #             if ch in TILE_NUMBERS:
-    #                 if start_tile == -1:
-    #                     start_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-    #                 end_tile = board.find_tile_from_str(row=ch, col=move_str[i])
-    #             # We can have a piece symbol only in the very first pos.
-    #             elif ch not in (TILE_NUMBERS + TILE_NAMES):
-    #                 raise WRONG_INPUT(move_str)
-
-    #     return Move(piece_code, start_tile, end_tile, move_code, move_str)
-
     @staticmethod
     def check_symbol_for_action(move_code: int, ch: str):
         if ch == "x":
@@ -305,10 +268,5 @@ class MoveDecoder:
         return move_code
 
     # TODO Work in progress. (No real reason to make this yet)
-
     def encode_to_str(self) -> str:
-        move_str = ""
-
-        # if self.
-
-        return move_str
+        return ""
