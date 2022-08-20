@@ -1,6 +1,7 @@
 """Anything related to a move how it was executed."""
-from typing import Set, Tuple, Union
+from typing import Set, Tuple
 import re
+
 # from chess.board import Board
 
 
@@ -16,10 +17,62 @@ TILE_NAMES = "abcdefgh"
 """ We should hardcode this values so we can evaluate
     faster which moves are in-bounds or not. """
 INVALID_TILES: Set[int] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    16, 17, 18, 20, 30, 40, 60, 70, 80, 90, 19, 29, 39, 49,
-    59, 69, 79, 89, 99, 100, 101, 102, 103, 104, 105, 106,
-    107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119}
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    20,
+    30,
+    40,
+    60,
+    70,
+    80,
+    90,
+    19,
+    29,
+    39,
+    49,
+    59,
+    69,
+    79,
+    89,
+    99,
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+}
 
 
 class MoveTypes:
@@ -59,14 +112,20 @@ class MoveDirection:
 class Move:
     """Holds info about the move made."""
 
-    def __init__(self, move_num: int, start_coords: tuple, end_coords: tuple, moving_piece, taken_piece, castling_info: Union[dict, None], pawn_transformed_to):
+    def __init__(
+        self,
+        move_num: int,
+        start_coords: tuple,
+        end_coords: tuple,
+        old_fen: str,
+        new_fen: str
+    ):
         """Components to indentify a move."""
         self.move_num = move_num
         self.start_coords = start_coords
         self.end_coords = end_coords
-        self.moving_piece = moving_piece
-        self.taken_piece = taken_piece
-        self.castling_info: dict = castling_info
+        self.old_fen: str = old_fen
+        self.new_fen: str = new_fen
 
     @staticmethod
     def get_direction_func(direction: MoveDirection):
@@ -79,48 +138,48 @@ class Move:
             MoveDirection.UP_LEFT: Move.up_left,
             MoveDirection.UP_RIGHT: Move.up_right,
             MoveDirection.DOWN_LEFT: Move.down_left,
-            MoveDirection.DOWN_RIGHT: Move.down_right
+            MoveDirection.DOWN_RIGHT: Move.down_right,
         }[direction]
 
     # Horizontal directions ###############
     @staticmethod
-    def up(coords, i) -> Tuple[int]:
+    def up(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction upwards."""
         return coords[0] - i, coords[1]
 
     @staticmethod
-    def down(coords, i) -> Tuple[int]:
+    def down(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction downwards."""
         return coords[0] + i, coords[1]
 
     @staticmethod
-    def right(coords, i) -> Tuple[int]:
+    def right(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction right."""
         return coords[0], coords[1] + i
 
     @staticmethod
-    def left(coords, i) -> Tuple[int]:
+    def left(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction left."""
         return coords[0], coords[1] - i
 
     # Diagonal directions ###############
     @staticmethod
-    def up_left(coords, i) -> Tuple[int]:
+    def up_left(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction upwards."""
         return coords[0] - i, coords[1] - i
 
     @staticmethod
-    def up_right(coords, i) -> Tuple[int]:
+    def up_right(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction upwards."""
         return coords[0] - i, coords[1] + i
 
     @staticmethod
-    def down_left(coords, i) -> Tuple[int]:
+    def down_left(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction upwards."""
         return coords[0] + i, coords[1] - i
 
     @staticmethod
-    def down_right(coords, i) -> Tuple[int]:
+    def down_right(coords, i) -> Tuple[int, int]:
         """Return a move that has a direction upwards."""
         return coords[0] + i, coords[1] + i
 
@@ -183,22 +242,26 @@ class MoveDecoder:
         return Exception("Invalid move input.")
 
     @staticmethod
-    def get_tile_coords(tile_str):
+    def get_tile_coords(tile: str):
         """Get the tile coordinates from a tile string."""
         # We parse the coords in the way our array is set up.
-        x = 8 - int(tile_str[1])
-        y = ord(tile_str[0]) - ord('a')
+        x = 8 - int(tile[1])
+        y = ord(tile[0]) - ord("a")
         return x, y
 
-    def __str__(self):
-        return (
-            f"start_tile: {self.start_tile}\n"
-            f"end_tile: {self.end_tile}\n"
-            f"piece_code: {self.piece_code}\n"
-            f"move_code: {self.move_code}\n"
-        )
+    @staticmethod
+    def encode_to_str(coords: Tuple[int, int]) -> str:
+        """Encode the coords to a string."""
+        return chr(ord("a") + coords[1]) + str(8 - coords[0])
 
-    # TODO write this a bit cleaner.
+    # def __str__(self):
+    #     return (
+    #         f"start_tile: {self.start_tile}\n"
+    #         f"end_tile: {self.end_tile}\n"
+    #         f"piece_code: {self.piece_code}\n"
+    #         f"move_code: {self.move_code}\n"
+    #     )
+
     @staticmethod
     def is_symbol_turn(move_str: str, is_white_turn: bool):
         """Given the first symbol show if the given piece is correct.
@@ -220,7 +283,10 @@ class MoveDecoder:
         WRONG_INPUT
             If its wrong character or its not this teams turn to play.
         """
-        if (move_str[0] not in TILE_NAMES) and ((move_str[0].isupper() and not is_white_turn) or (move_str[0].islower() and is_white_turn)):
+        if (move_str[0] not in TILE_NAMES) and (
+            (move_str[0].isupper() and not is_white_turn)
+            or (move_str[0].islower() and is_white_turn)
+        ):
             raise WRONG_INPUT(move_str, msg="Wrong piece team entered.")
         return True
 
@@ -266,7 +332,3 @@ class MoveDecoder:
         else:
             move_code |= move_action
         return move_code
-
-    # TODO Work in progress. (No real reason to make this yet)
-    def encode_to_str(self) -> str:
-        return ""

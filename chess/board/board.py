@@ -1,5 +1,4 @@
 """Board module contains all the classes and methods which are needed for a chessboard to be functional."""
-import numpy as np
 from typing import Any
 
 from typing import Dict, List, Tuple
@@ -80,7 +79,6 @@ class Board:
         }
 
         self.dead_pieces: List[Piece] = []
-        # print(self)
         self.correct_format_print()
 
     def try_updating_castling(self, moving_piece):
@@ -332,6 +330,11 @@ class Board:
                 return index
         return -1
 
+    def get_fen(self) -> str:
+        """Get the fen for the board."""
+        self.fen = Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)
+        return self.fen
+
     def __str__(self):
         """Print the board state."""
         print("\n      0     1     2     3     4     5     6     7")
@@ -340,9 +343,7 @@ class Board:
             for col in range(8):
                 piece_code = self.state[row, col]
                 print(f"[ {Piece.get_symbol(piece_code)} ]", end=" ")
-        print(
-            f"\n{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)}"
-        )
+        print(f"\n{self.get_fen()}")
         return " "
 
     def correct_format_print(self):
@@ -353,7 +354,5 @@ class Board:
                 piece_code = self.state[8 - row, 8 - col]
                 print(f"[ {Piece.get_symbol(piece_code)} ]", end=" ")
         print("\n\n      a     b     c     d     e     f     g     h\n\n")
-        print(
-            f"{Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)}\n\n"
-        )
+        print(f"{self.get_fen()}\n\n")
         return " "

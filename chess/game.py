@@ -1,9 +1,9 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
 from uuid import UUID
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
-from chess.board import Board
+from chess.board import Board, BoardUtils
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.king import King, CastleSide
@@ -189,42 +189,6 @@ class Game:
         if is_piece_white != self.is_white_turn:
             return False
         return self.is_move_valid(start_coords, end_coords)
-    #     """Return whether or not the player move is valid.
-
-    #     We take for granted that the given input is correct and the
-    #     starting tile does have the correct piece code.
-
-    #     Parameters
-    #     ----------
-    #     start_tile : int
-    #         Starting coords of the piece.
-    #     end_tile : int
-    #         Ending coords of the piece.
-
-    #     Returns
-    #     -------
-    #     bool
-    #         Returns whether or not a move is valid.
-    #     """
-    #     piece = self.board.get_piece(start_coords)
-    #     if piece == Piece.EMPTY:
-    #         return False
-    #     moves = piece.get_moves(self.board.state)
-    #     # For each simulated move, if the king is in check, then the move is invalid.
-
-    #     # sim_state = self.board.simulated_board_state()
-    #     # sim_state[end_coords] = sim_state[start_coords]
-    #     # for move in moves:
-    #     #     sim_state = self.board.simulated_board_state()
-    #     #     sim_state_copy = sim_state.copy()
-    #     # print(self.board.w_king[0].in_check(self.board.b_pieces, self.board.state))
-    #     # moves = Piece.get_moveset(start_tile, piece_code)
-
-    #     # possible_moves = Move.remove_off_bounds_tiles(moves)
-
-    #     print(f"{piece.symbol}: {start_coords} --> {end_coords}")
-    #     print(f"moves: {moves}")
-    #     return end_coords in moves
 
     def register_move(self, start_coords: tuple, end_coords: tuple):
         """Register the a move.
@@ -239,28 +203,26 @@ class Game:
         """
         moving_piece: Piece = self.board.get_piece(start_coords)
         taken_piece: Piece = self.board.get_piece(end_coords)
-        castling_info: Dict[List[int], List[int]] = self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
 
         # NOTE Make it possible so the Pawn can transform here.
-        transformed_piece = None
-        if moving_piece.ptype == Piece.PAWN and moving_piece.is_transforming():
-            ...
-            # self.board.transform_pawn_to(moving_pawn, piece_code)
 
+        self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
         # Reveal board state.
         if self.visuals is False:
             self.board.correct_format_print()
         else:
             print(self.board)
 
-        move = Move(len(self.moves_history), start_coords=start_coords, end_coords=end_coords, moving_piece=moving_piece, taken_piece=taken_piece, castling_info=castling_info, pawn_transformed_to=transformed_piece)
-        self.moves_history.append(move)
-
         # Change the turn.
         self.is_white_turn = self.board.colour_to_move == Piece.WHITE
+
+        # Last move new fen is no the new old fen.
+        old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].new_fen
+        move = Move(len(self.moves_history), start_coords, end_coords, old_fen, new_fen=self.board.fen)
+        self.moves_history.append(move)
         return move
 
-    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece) -> Dict[List[int], List[int]]:
+    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece):
         """Update the board state and pieces.
 
         Parameters
@@ -279,21 +241,24 @@ class Game:
         Dict[List[int], List[int]]
             If the moving piece is a King and the move was castling, return the castling info.
         """
-        # Change the colour that has to move next.
-        self.board.colour_to_move = Board.swap_colours(self.board.colour_to_move)
-
         self.board.try_updating_castling(moving_piece)
-        # Since the move is registered, the opposite team plays next.
-        self.board.colour_to_move: int = Piece.BLACK if self.is_white_turn else Piece.WHITE
+        # Change the colour that has to move next.
+        self.board.colour_to_move = BoardUtils.swap_colours(self.board.colour_to_move)
+
+        if moving_piece.ptype == Piece.PAWN:
+            if abs(old_coords[0] - new_coords[0]) > 1:
+                row_skipped = new_coords[0] + (1 if moving_piece.color == Piece.WHITE else -1)
+                self.board.en_passant_coords = MoveDecoder.encode_to_str((row_skipped, new_coords[1]))
+            elif moving_piece.is_transforming():
+                ...
+            # self.board.transform_pawn_to(moving_pawn, piece_code)
 
         # Was the move a castling move?
         castling_side = None
-        castling_info = None
         if isinstance(moving_piece, King) and moving_piece.times_moved == 0:
-            castling_side = King.castling_side(new_coords)
-            if castling_side is not None:
+            if castling_side := King.castling_side(new_coords):
                 new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
-                castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
+                # castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
 
         # Update pieces
         moving_piece.set_coords(new_coords)
@@ -306,7 +271,7 @@ class Game:
         # Update board state.
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
-        return castling_info
+        self.board.fen = self.board.get_fen()
 
     def get_castling_rook_positions(self, castling_side: int) -> tuple:
         """Return the positions of the rooks involved in a castling."""

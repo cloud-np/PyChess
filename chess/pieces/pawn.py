@@ -37,25 +37,24 @@ class Pawn(Piece):
 
         # Left enemy
         left_enemy = board_state[l_coords]
-        if left_enemy != Piece.EMPTY and Piece.get_colour(left_enemy) == self.enemy_color:
+        if (
+            left_enemy != Piece.EMPTY and Piece.get_colour(left_enemy) == self.enemy_color
+        ):
             coords_set.add(l_coords)
 
         # Right enemy
         right_enemy = board_state[r_coords]
-        if right_enemy != Piece.EMPTY and Piece.get_colour(right_enemy) == self.enemy_color:
+        if (
+            right_enemy != Piece.EMPTY and Piece.get_colour(right_enemy) == self.enemy_color
+        ):
             coords_set.add(r_coords)
 
         return coords_set
-    
+
     def is_transforming(self) -> bool:
-        """This detects if the Pawn is transforming based on each position and color."""
-        if self.color == Piece.WHITE and self.coords[0] == 0:
-            return True
-        if self.color == Piece.BLACK and self.coords[0] == 7:
-            return True
-        return False
-            
-    
+        """Detect if the Pawn is transforming based on each position and color."""
+        return self.coords[0] == {Piece.WHITE: 0, Piece.BLACK: 7}[self.color]
+
     def get_transform_possible_coords(self, board_state):
         ...
 
