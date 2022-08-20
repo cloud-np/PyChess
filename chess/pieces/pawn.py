@@ -1,5 +1,6 @@
 """Includes the class for each Pawn."""
 from chess.pieces.piece import Piece
+from typing import Tuple, Optional, Set
 
 
 class Pawn(Piece):
@@ -57,6 +58,10 @@ class Pawn(Piece):
 
     def get_transform_possible_coords(self, board_state):
         ...
+
+    def get_en_passant_coords(self, en_passant_coords: Optional[Tuple[int, int]]) -> Optional[Set[int]]:
+        """Mainly for readability."""
+        return set(en_passant_coords) if en_passant_coords else None
 
     # TODO: Maybe we can write this a bit more cleanly?
     def get_possible_coords(self, board_state):

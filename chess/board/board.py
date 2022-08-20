@@ -1,7 +1,5 @@
 """Board module contains all the classes and methods which are needed for a chessboard to be functional."""
-from typing import Any
-
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Literal, Union, Any
 from .board_utils import BoardUtils
 from .fen import Fen
 from chess.pieces.piece import Piece
@@ -54,6 +52,9 @@ class Board:
         """
         self.starting_fen: str = fen
 
+        self.colour_to_move: Literal[Piece.WHITE, Piece.BLACK]
+        self.castling_rights: Dict[Tuple[int, int], Tuple[int, int]]
+        self.en_passant_coords: Union[Tuple[int, int], str]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,

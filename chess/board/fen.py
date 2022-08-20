@@ -76,7 +76,7 @@ class Fen:
 
     @staticmethod
     def make_state_pieces_info(board_state_fen: str) -> Tuple[Any, List[Piece]]:
-        pieces: list = []
+        pieces: List[Piece] = []
         pos: int = 0
         # Parse the pieces and the tiles.
         for ch in board_state_fen:
@@ -137,7 +137,7 @@ class Fen:
         return castling
 
     @staticmethod
-    def create_en_passant_coords(en_passant_fen: str) -> Optional[List[int]]:
+    def create_en_passant_coords(en_passant_fen: str) -> Optional[Tuple[int, int]]:
         """Create the en passant coords based on the given en_passant_fen.
 
         For example if en_passant_fen is "e3" then the en passant coords are [4, 3].
@@ -149,7 +149,7 @@ class Fen:
 
         Returns
         -------
-        Optional[List[int]]
+        Optional[Tuple[int, int]]
             Either None because there is no en passant or the en passant coords.
         """
         if en_passant_fen == "-":
@@ -191,7 +191,7 @@ class Fen:
         colour_to_move: Literal[Piece.WHITE, Piece.BLACK] = (
             Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
         )
-        castling: Dict[List[bool], List[bool]] = Fen.create_castling_info(castling_fen)
-        en_passant_coords: Optional[List[int]] = Fen.create_en_passant_coords(en_passant_fen)
+        castling: Dict[Tuple[int, int], Tuple[int, int]] = Fen.create_castling_info(castling_fen)
+        en_passant_coords: Optional[Tuple[int, int]] = Fen.create_en_passant_coords(en_passant_fen)
 
         return pieces, colour_to_move, castling, en_passant_coords

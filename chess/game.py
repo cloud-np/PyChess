@@ -1,11 +1,12 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
 from uuid import UUID
-from typing import Dict, List, Tuple
+from typing import List, Tuple, Optional
 
 from chess.board import Board, BoardUtils
 from datetime import datetime
 from chess.pieces.piece import Piece
+from chess.pieces.pawn import Pawn
 from chess.pieces.king import King, CastleSide
 from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
@@ -113,6 +114,10 @@ class Game:
                 moves.append((piece.coords, coords_set))
         return moves
 
+    def get_last_played_move(self) -> Optional[Move]:
+        """Get the last played move."""
+        return self.moves_history[-1] if len(self.moves_history) == 0 else None
+
     # NOTE: Add en passant.
     def get_piece_possible_coords(self, piece, start_coords) -> set:
         """Get all the possible coords."""
@@ -120,6 +125,11 @@ class Game:
         if isinstance(piece, King):
             if castling_moves := piece.get_castling_coords(self.board):
                 coords_set = coords_set | castling_moves
+        if isinstance(piece, Pawn):
+            ...
+            # if en_passant_move := piece.get_en_passant_coords(self.board.en_passant_coords):
+            #     if en_passant_move is not None:
+            #         coords_set = coords_set | en_passant_move
         return coords_set
 
     def get_illegal_coords(self, piece, coords_set) -> set:
@@ -248,8 +258,10 @@ class Game:
         if moving_piece.ptype == Piece.PAWN:
             if abs(old_coords[0] - new_coords[0]) > 1:
                 row_skipped = new_coords[0] + (1 if moving_piece.color == Piece.WHITE else -1)
-                self.board.en_passant_coords = MoveDecoder.encode_to_str((row_skipped, new_coords[1]))
-            elif moving_piece.is_transforming():
+                self.board.en_passant_coords = (row_skipped, new_coords[1])
+            else:
+                self.board.en_passant_coords = None
+            if moving_piece.is_transforming():
                 ...
             # self.board.transform_pawn_to(moving_pawn, piece_code)
 
