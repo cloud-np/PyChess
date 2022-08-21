@@ -37,14 +37,12 @@ class Rook(Piece):
 
     @staticmethod
     def __get_rooks_corner(coords):
-        if coords == (7, 7):
-            return RookCorner.BOTTOM_RIGHT
-        if coords == (7, 0):
-            return RookCorner.BOTTOM_LEFT
-        if coords == (0, 7):
-            return RookCorner.TOP_RIGHT
-        if coords == (0, 0):
-            return RookCorner.TOP_LEFT
+        return {
+            (7, 7): RookCorner.BOTTOM_RIGHT,
+            (7, 0): RookCorner.BOTTOM_LEFT,
+            (0, 7): RookCorner.TOP_RIGHT,
+            (0, 0): RookCorner.TOP_LEFT,
+        }[coords]
 
     def get_possible_coords(self, board_state):
         """Override the get_moves from Piece class."""

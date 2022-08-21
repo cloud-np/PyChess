@@ -1,6 +1,6 @@
 """Includes the base class for each Piece."""
 from chess.move import MoveDirection, Move
-from typing import Tuple, Set, Literal
+from typing import Tuple, Set
 
 
 class Piece:
@@ -27,12 +27,11 @@ class Piece:
 
     WHITE = 0x100      # 256
     BLACK = 0x200      # 512
-    INVALID = 0x1000   # 4096
+    INVALID = 0x300   # 4096
 
     TYPE_MASK = 0xF           # 7
     UNIQUE_PIECE_MASK = 0xF0  # 240
     COLOR_MASK = 0xF00        # 3840
-    ERROR_MASK = 0xF000       # 61440
 
     @staticmethod
     def get_the_specific_piece(piece_code: int) -> int:
@@ -56,7 +55,67 @@ class Piece:
                     enemy_possible_coords = enemy_possible_coords | en.get_possible_coords(board_state)
         return enemy_possible_coords
 
-    def add_moves_in_direction(self, board_state, coords_set: Set[Tuple[int]], direction: MoveDirection) -> None:
+    @staticmethod
+    def rook_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def bishop_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def knight_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def queen_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def king_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 1, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def pawn_moves(board_state, piece_info):
+        """Override the get_moves from Piece class."""
+        moves = set()
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+            Piece.add_moves_in_direction(board_state, 1, piece_info, moves, md)
+        return moves
+
+    @staticmethod
+    def get_possible_coords(piece_info: Tuple[int, Tuple[int, int]], board_state):
+        return {
+            Piece.KING: Piece.king_moves,
+            Piece.PAWN: Piece.pawn_moves,
+            Piece.KNIGHT: Piece.knight_moves,
+            Piece.BISHOP: Piece.bishop_moves,
+            Piece.ROOK: Piece.rook_moves,
+            Piece.QUEEN: Piece.queen_moves
+        }[Piece.get_type(piece_info[0])](board_state, piece_info)
+
+    @staticmethod
+    def add_moves_in_direction(board_state, range_limit: int, piece_info: Tuple[int, Tuple[int, int]], coords_set: Set[Tuple[int]], direction: MoveDirection) -> None:
         """Found the all moves based of the 'direction' a direction.
 
         Given a direction it will generate all the moves until it hits either:
@@ -68,22 +127,24 @@ class Piece:
         ----------
         board_state : BoardStateList
             A 2d custom matrix that holds information about all the pieces on board.
-        coords_set : set[tuple[int]]
+        coords_set : Set[Tuple[int, int]]
             The set of the valid coords based on the criteria we added above.
 
         direction : MoveDirection
             The direction of which we want to generate moves to.
         """
         direction_func = Move.get_direction_func(direction)
-        for i in range(1, self.range_limit):
-            coords: Tuple[int, int] = direction_func(self.coords, i)
-            piece_code = board_state[coords]
-            color = Piece.get_color(piece_code)
-            if piece_code == Piece.EMPTY:
+        curr_pcolor = Piece.get_color(piece_info[0])
+        for i in range(1, range_limit):
+            coords: Tuple[int, int] = direction_func(piece_info[1], i)
+            dir_pc = board_state[coords]
+            dir_pcolor = Piece.get_color(dir_pc)
+
+            if dir_pc == Piece.EMPTY:
                 coords_set.add(coords)
-            elif piece_code == Piece.INVALID or color == self.color:
+            elif dir_pc == Piece.INVALID or dir_pcolor == curr_pcolor:
                 break
-            elif color != self.color:
+            else:
                 coords_set.add(coords)
                 break
 

@@ -7,9 +7,9 @@ class BoardUtils:
     """A collection of static methods for board related operations."""
 
     @staticmethod
-    def swap_colours(colour: int) -> Literal[Piece.WHITE, Piece.BLACK]:
-        """Swap the colours."""
-        return Piece.WHITE if colour == Piece.BLACK else Piece.BLACK
+    def swap_colors(color: int) -> Literal[Piece.WHITE, Piece.BLACK]:
+        """Swap the colors."""
+        return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
 
     # FIXME Needs refactoring because of the new board representation.
     @staticmethod

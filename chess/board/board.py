@@ -53,13 +53,13 @@ class Board:
         self.starting_fen: str = fen
         self.last_piece_moved: Optional[Piece] = None
 
-        self.colour_to_move: Literal[Piece.WHITE, Piece.BLACK]
+        self.color_to_move: Literal[Piece.WHITE, Piece.BLACK]
         self.castling_rights: Dict[Tuple[int, int], Tuple[int, int]]
         self.en_passant_coords: Union[Tuple[int, int], str]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,
-            self.colour_to_move,
+            self.color_to_move,
             self.castling_rights,
             self.en_passant_coords,
         ) = Fen.translate_to_state(fen)
@@ -80,7 +80,7 @@ class Board:
             Piece.BLACK: self.b_pieces[Piece.KING | Piece.BLACK][0],
         }
 
-        self.dead_pieces: List[Piece] = []
+        self.dead_pieces: List[int] = []
         self.correct_format_print()
 
     def try_updating_castling(self, moving_piece):
@@ -157,48 +157,23 @@ class Board:
 
     def get_piece(self, coords: tuple) -> Piece:
         """Given a coords it will return the piece that is there."""
-        piece_code = self.state[coords]
-        return self.get_piece_obj(coords, piece_code)
+        return self.state[coords]
 
-    def get_piece_obj(self, coords: tuple, piece_code: int):
-        # sourcery skip: raise-specific-error
-        """Get the piece obj.
+    def get_piece_coords(self, piece_code: int) -> Optional[Tuple[int, int]]:
+        """Given a piece_code find the coords of the piece.
 
         Find the piece obj that corrisponds to
         coords and the piece code that was given.
-
-        Parameters
-        ----------
-        coords : tuple
-            The coords of the piece obj.
-        piece_code : int
-            The piece code of the piece.
-
-        Returns
-        -------
-        Piece
-            The piece that was found.
         """
         if piece_code == Piece.EMPTY:
             return None
 
-        color = Piece.get_color(piece_code)
-        if color == Piece.WHITE:
-            pieces = [
-                piece
-                for piece in self.w_pieces[piece_code]
-                if piece.coords == coords and piece.piece_code == piece_code
-            ]
-        else:
-            pieces = [
-                piece
-                for piece in self.b_pieces[piece_code]
-                if piece.coords == coords and piece.piece_code == piece_code
-            ]
-
-        if len(pieces) > 1 or not pieces:
-            raise Exception("Found the same piece obj twice!")
-        return pieces[0]
+        pcolor = Piece.get_color(piece_code)
+        ptype = Piece.get_type(piece_code)
+        pieces_list = self.w_pieces if pcolor == Piece.WHITE else self.b_pieces
+        for p_info in pieces_list[pcolor | ptype]:
+            if piece_code == p_info[0]:
+                return p_info[1]
 
     def organize_pieces(
         self, all_pieces: List[Piece], is_whites: bool
@@ -234,18 +209,6 @@ class Board:
         return pieces
 
     @staticmethod
-    def make_piece(piece_code: int, coords: tuple) -> Any:
-        """Create a piece object based on the given piece code.
-
-        Parameters
-        ----------
-        piece_code : int
-            Piece code that describes the piece type and color.
-        """
-        PieceConstructor = Board.piece_classes(piece_code)
-        return PieceConstructor(piece_code, coords)
-
-    @staticmethod
     def piece_classes(piece_code: int) -> dict:
         """Map in a dictionary all the functions for the pieces.
 
@@ -256,12 +219,12 @@ class Board:
         """
         ptype = Piece.get_type(piece_code)
         return {
-            Piece.KING: King,
-            Piece.PAWN: Pawn,
-            Piece.BISHOP: Bishop,
-            Piece.KNIGHT: Knight,
-            Piece.ROOK: Rook,
-            Piece.QUEEN: Queen,
+            Piece.KING: Piece.king_moves,
+            Piece.PAWN: Piece.pawn_moves,
+            Piece.BISHOP: Piece.bishop_moves,
+            Piece.KNIGHT: Piece.knight_moves,
+            Piece.ROOK: Piece.rook_moves,
+            Piece.QUEEN: Piece.queen_moves,
         }[ptype]
 
     def setup_board_state_and_pieces(self, pc_and_coords: Tuple[int, Tuple[int, int]]) -> Tuple[BoardStateList, List[Piece]]:
@@ -314,7 +277,7 @@ class Board:
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = "") -> int:
-        colour = Piece.get_color(piece_code)
+        color = Piece.get_color(piece_code)
 
         _col = None
         if row != -1:
@@ -323,7 +286,7 @@ class Board:
         elif col != "":
             _col = BoardUtils.get_number_for_col(col)
 
-        pieces = self.w_pieces if colour == Piece.WHITE else self.b_pieces
+        pieces = self.w_pieces if color == Piece.WHITE else self.b_pieces
 
         for index in pieces[piece_code]:
             # Des ama to index einai ths idias sthlhs h shras
@@ -336,7 +299,7 @@ class Board:
 
     def get_fen(self) -> str:
         """Get the fen for the board."""
-        self.fen = Fen.create_fen(self.state, self.colour_to_move, self.castling_rights, self.en_passant_coords)
+        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castling_rights, self.en_passant_coords)
         return self.fen
 
     def __str__(self):
