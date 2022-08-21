@@ -1,6 +1,6 @@
 """Includes the base class for each Piece."""
 from chess.move import MoveDirection, Move
-from typing import Tuple, Set
+from typing import Tuple, Set, Literal
 
 
 class Piece:
@@ -29,57 +29,20 @@ class Piece:
     BLACK = 0x200      # 512
     INVALID = 0x1000   # 4096
 
-    TYPE_MASK = 0xF          # 7
-    UNIQUE_PIECE_MAS = 0xF0  # 240
-    COLOR_MASK = 0xF00       # 3840
-    ERROR_MASK = 0xF000      # 61440
-
-    def __init__(self, piece_code: int, coords: tuple):
-        """Init the piece.
-
-        Parameters
-        ----------
-        color : int
-            The color of the created piece.
-        ptype : int
-            The type of the piece.
-        symbol : str
-            The symbol that is shown when printing the piece.
-        coords : tuple
-            The coordinates of the piece.
-        """
-        self.piece_code: int = piece_code
-        self.color: int = Piece.get_color(piece_code)
-        self.enemy_color: int = Piece.get_enemy_colour(piece_code)
-        self.ptype: int = Piece.get_type(piece_code)
-        self.symbol: int = Piece.get_symbol(piece_code)
-        self.coords: tuple = coords
-        self.times_moved: int = 0
-        self.is_dead: bool = False
-    #     self.simulated: dict = {'is_simulated': False, 'og_coords': coords}
-
-    # def unsimulate_move(self, end_coords):
-    #     """Simulate the piece."""
-    #     self.simulated['is_simulated'] = False
-    #     self.coords = self.simulated['og_coords']
-
-    # def simulate_move(self, end_coords):
-    #     """Simulate the piece."""
-    #     self.simulated['is_simulated'] = True
-    #     self.coords = end_coords
-
-    def __eq__(self, other: 'Piece'):
-        """Overload the == when it is applied on two Piece classes to check if they are equal based on their coords and piececode."""
-        return self.__key() == other.__key() if isinstance(other, Piece) else False
-
-    def __key(self):
-        return self.piece_code, *self.coords
+    TYPE_MASK = 0xF           # 7
+    UNIQUE_PIECE_MASK = 0xF0  # 240
+    COLOR_MASK = 0xF00        # 3840
+    ERROR_MASK = 0xF000       # 61440
 
     @staticmethod
-    def get_enemy_colour(piece_code):
-        """Given a piece code return the enemy colour."""
-        color = Piece.get_color(piece_code)
-        return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
+    def get_the_specific_piece(piece_code: int) -> int:
+        """Return which specific piece is this."""
+        return piece_code & Piece.UNIQUE_PIECE_MASK
+
+    @staticmethod
+    def get_enemy_color(our_piece_code: int) -> int:
+        """Given a piece code return the enemy color."""
+        return Piece.WHITE if Piece.get_color(our_piece_code) == Piece.BLACK else Piece.BLACK
 
     @staticmethod
     def get_enemy_possible_coords(enemy_pieces, board_state):
@@ -124,22 +87,6 @@ class Piece:
                 coords_set.add(coords)
                 break
 
-    # def is_piece_and_same_color(self, o_piece) -> tuple[bool]:
-    #     """Check if the given arg is an instance of Piece and then if it has the same color."""
-    #     if isinstance(o_piece, Piece):
-    #         if o_piece.color != self.color:
-    #             return True, True
-    #         return True, False
-    #     return False, False
-
-    def __hash__(self):
-        """Make the obj hashable so it can be used in Sets etc."""
-        return hash(self.__key())
-
-    def __str__(self):
-        """Show the piece and the coords that is on."""
-        return f" {self.symbol}  coords: [{self.coords[0]}, {self.coords[1]}]"
-
     @staticmethod
     def get_type(piece_code: int) -> int:
         """Filter the piece_code and find the piece type.
@@ -180,7 +127,7 @@ class Piece:
 
     @staticmethod
     def get_color(piece_code: int) -> int:
-        """Filter the piece_code and find the piece colour.
+        """Filter the piece_code and find the piece color.
 
         Parameters
         ----------
@@ -190,9 +137,9 @@ class Piece:
         Returns
         -------
         int
-            This will return only the colour part of the binary num.
+            This will return only the color part of the binary num.
         """
-        return piece_code & Piece.COLOUR_MASK
+        return piece_code & Piece.COLOR_MASK
 
     def set_coords(self, coords: tuple):
         """Setter for coords."""

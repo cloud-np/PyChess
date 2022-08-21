@@ -216,19 +216,21 @@ class Board:
             A map of the existing (white or black) pieces
             separated in lists based on their type.
         """
-        color = Piece.WHITE if is_whites else Piece.BLACK
+        color_given = Piece.WHITE if is_whites else Piece.BLACK
         pieces: Dict[int, List[int]] = {
-            Piece.KING | color: [],
-            Piece.PAWN | color: [],
-            Piece.BISHOP | color: [],
-            Piece.KNIGHT | color: [],
-            Piece.ROOK | color: [],
-            Piece.QUEEN | color: [],
+            Piece.KING | color_given: [],
+            Piece.PAWN | color_given: [],
+            Piece.BISHOP | color_given: [],
+            Piece.KNIGHT | color_given: [],
+            Piece.ROOK | color_given: [],
+            Piece.QUEEN | color_given: [],
         }
 
-        for piece in all_pieces:
-            if isinstance(piece, Piece) and piece.color == color:
-                pieces[piece.piece_code].append(piece)
+        for pc, coords in all_pieces:
+            color = Piece.get_color(pc)
+            ptype = Piece.get_type(pc)
+            if color == color_given:
+                pieces[ptype | color].append((pc, coords))
         return pieces
 
     @staticmethod
@@ -280,7 +282,7 @@ class Board:
         pieces: List[Piece] = []
         for pc, coords in pc_and_coords:
             state[coords] = pc
-            pieces.append(Board.make_piece(pc, coords))
+            pieces.append((pc, coords))
         return state, pieces
 
     def are_coords_under_attack(self, coords_list, enemy_color):

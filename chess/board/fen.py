@@ -75,10 +75,16 @@ class Fen:
         return fen[:-1]
 
     @staticmethod
-    def make_state_pieces_info(board_state_fen: str) -> Tuple[Any, List[Piece]]:
-        pieces: List[Piece] = []
+    def make_state_and_pieces(board_state_fen: str) -> Tuple[Any, List[int]]:
+        pieces: List[int] = []
         pos: int = 0
-        # Parse the pieces and the tiles.
+        pawns_count: int = 0
+        knights_count: int = 0
+        bishops_count: int = 0
+        rooks_count: int = 0
+
+        piece_pos = {0: Piece.LEFT_PIECE, 1: Piece.RIGHT_PIECE}
+        # Parse the pieces and the tiles
         for ch in board_state_fen:
             # Needs a regex to check if the fen is valid
             if pos > 63:
@@ -93,12 +99,29 @@ class Fen:
                 piece_code |= Piece.KING
             elif chl == "p":
                 piece_code |= Piece.PAWN
+                piece_code |= {0: Piece.A_PAWN, 1: Piece.B_PAWN, 2: Piece.C_PAWN, 3: Piece.D_PAWN,
+                               4: Piece.E_PAWN, 5: Piece.F_PAWN, 6: Piece.G_PAWN, 7: Piece.H_PAWN}[pawns_count]
+                pawns_count += 1
+                if pawns_count == 8:
+                    pawns_count = 0
             elif chl == "n":
                 piece_code |= Piece.KNIGHT
+                piece_code |= piece_pos[knights_count]
+                knights_count += 1
+                if knights_count == 2:
+                    knights_count = 0
             elif chl == "b":
                 piece_code |= Piece.BISHOP
+                piece_code |= piece_pos[bishops_count]
+                bishops_count += 1
+                if bishops_count == 2:
+                    bishops_count = 0
             elif chl == "r":
                 piece_code |= Piece.ROOK
+                piece_code |= piece_pos[rooks_count]
+                rooks_count += 1
+                if rooks_count == 2:
+                    rooks_count = 0
             elif chl == "q":
                 piece_code |= Piece.QUEEN
             elif chl == "/":
@@ -187,7 +210,7 @@ class Fen:
         except ValueError:
             raise ValueError("Wrong fen format") from None
 
-        pieces = Fen.make_state_pieces_info(board_state_fen)
+        pieces = Fen.make_state_and_pieces(board_state_fen)
         colour_to_move: Literal[Piece.WHITE, Piece.BLACK] = (
             Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
         )
