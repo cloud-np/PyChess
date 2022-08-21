@@ -110,6 +110,9 @@ class Game:
                 if isinstance(piece, King):
                     if castling_moves := piece.get_castling_coords(self.board):
                         coords_set = coords_set | castling_moves
+                if isinstance(piece, Pawn):
+                    if en_pssant_moved := piece.get_en_passant_coords(self.board.state, self.board.en_passant_coords):
+                        coords_set = coords_set | castling_moves
                 coords_set = coords_set - self.get_illegal_coords(piece, coords_set)
                 moves.append((piece.coords, coords_set))
         return moves
@@ -216,7 +219,7 @@ class Game:
 
         # NOTE Make it possible so the Pawn can transform here.
 
-        self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
+        castling_info = self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
         # Reveal board state.
         if self.visuals is False:
             self.board.correct_format_print()
@@ -228,7 +231,7 @@ class Game:
 
         # Last move new fen is no the new old fen.
         old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].new_fen
-        move = Move(len(self.moves_history), start_coords, end_coords, old_fen, new_fen=self.board.fen)
+        move = Move(len(self.moves_history), start_coords, end_coords, castling_info, old_fen, new_fen=self.board.fen)
         self.moves_history.append(move)
         return move
 
@@ -267,10 +270,11 @@ class Game:
 
         # Was the move a castling move?
         castling_side = None
+        castling_info = None
         if isinstance(moving_piece, King) and moving_piece.times_moved == 0:
             if castling_side := King.castling_side(new_coords):
                 new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
-                # castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
+                castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
 
         # Update pieces
         moving_piece.set_coords(new_coords)
@@ -284,6 +288,7 @@ class Game:
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
         self.board.fen = self.board.get_fen()
+        return castling_info
 
     def get_castling_rook_positions(self, castling_side: int) -> tuple:
         """Return the positions of the rooks involved in a castling."""

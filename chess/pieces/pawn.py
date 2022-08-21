@@ -59,8 +59,12 @@ class Pawn(Piece):
     def get_transform_possible_coords(self, board_state):
         ...
 
-    def get_en_passant_coords(self, en_passant_coords: Optional[Tuple[int, int]]) -> Optional[Set[int]]:
-        """Mainly for readability."""
+    def get_en_passant_coords(self, board_state, en_passant_coords: Optional[Tuple[int, int]]) -> Optional[Set[int]]:
+        # if en_passant_coords is not None:
+            
+        #     en_passant_coords[1]
+            # if board_state[]:
+                # ...
         return set(en_passant_coords) if en_passant_coords else None
 
     # TODO: Maybe we can write this a bit more cleanly?

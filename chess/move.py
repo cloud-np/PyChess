@@ -1,5 +1,5 @@
 """Anything related to a move how it was executed."""
-from typing import Set, Tuple
+from typing import Set, Tuple, Dict
 import re
 
 # from chess.board import Board
@@ -115,15 +115,17 @@ class Move:
     def __init__(
         self,
         move_num: int,
-        start_coords: tuple,
-        end_coords: tuple,
+        start_coords: Tuple[int, int],
+        end_coords: Tuple[int, int],
+        castling_info: Dict[int, int],
         old_fen: str,
         new_fen: str
     ):
         """Components to indentify a move."""
-        self.move_num = move_num
-        self.start_coords = start_coords
-        self.end_coords = end_coords
+        self.move_num: int = move_num
+        self.start_coords: Tuple[int, int] = start_coords
+        self.end_coords: Tuple[int, int] = end_coords
+        self.castling_info: Dict[int, int] = castling_info
         self.old_fen: str = old_fen
         self.new_fen: str = new_fen
 

@@ -28,7 +28,7 @@ class Fen:
     @staticmethod
     def __get_en_passant_fen(en_passant: Optional[List[int]]) -> str:
         """Get the en passant fen."""
-        return "-" if en_passant is None else str(en_passant[0]) + str(en_passant[1])
+        return "-" if en_passant is None else BoardUtils.get_col_for_number(en_passant[1]) + str(8 - en_passant[0])
 
     @staticmethod
     def __get_castling_fen(castling_rights: Dict[List[bool], List[bool]]) -> str:
