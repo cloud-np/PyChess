@@ -1,14 +1,9 @@
 """Board module contains all the classes and methods which are needed for a chessboard to be functional."""
-from typing import Dict, List, Tuple, Literal, Union, Any, Optional
+from typing import Dict, List, Tuple, Literal, Union, Optional
 from .board_utils import BoardUtils
 from .fen import Fen
+from chess.pieces.rook import RookCorner
 from chess.pieces.piece import Piece
-from chess.pieces.bishop import Bishop
-from chess.pieces.queen import Queen
-from chess.pieces.rook import Rook, RookCorner
-from chess.pieces.king import King
-from chess.pieces.knight import Knight
-from chess.pieces.pawn import Pawn
 
 BOARD_OFFSET = 21
 
@@ -67,17 +62,15 @@ class Board:
         self.state, pieces = self.setup_board_state_and_pieces(pcs_and_coords)
 
         # Get White Lists
-        self.w_pieces = self.organize_pieces(pieces, is_whites=True)
-
+        w_pieces = Board.organize_pieces(pieces, is_whites=True)
         # Get Black Lists
-        self.b_pieces = self.organize_pieces(pieces, is_whites=False)
-
-        self.all_pieces = {Piece.WHITE: self.w_pieces, Piece.BLACK: self.b_pieces}
+        b_pieces = Board.organize_pieces(pieces, is_whites=False)
+        self.all_pieces = {Piece.WHITE: w_pieces, Piece.BLACK: b_pieces}
 
         # Kings
         self.kings = {
-            Piece.WHITE: self.w_pieces[Piece.KING | Piece.WHITE][0],
-            Piece.BLACK: self.b_pieces[Piece.KING | Piece.BLACK][0],
+            Piece.WHITE: w_pieces[Piece.KING | Piece.WHITE][0],
+            Piece.BLACK: b_pieces[Piece.KING | Piece.BLACK][0],
         }
 
         self.dead_pieces: List[int] = []
@@ -86,27 +79,24 @@ class Board:
     def try_updating_castling(self, moving_piece):
         """Remove castling privileges depending the moving piece."""
         # Only for the first time the King is moving.
-        if moving_piece.times_moved == 0 and isinstance(moving_piece, King):
-            moving_piece.r_castle["is_valid"] = False
-            moving_piece.l_castle["is_valid"] = False
-            self.castling_rights[moving_piece.color] = [False, False]
+        pcolor = Piece.get_color(moving_piece)
+        if Piece.get_type(moving_piece) == Piece.KING:
+            self.castling_rights[pcolor] = [False, False]
 
-        if isinstance(moving_piece, Rook):
+        if Piece.get_type(moving_piece) == Piece.ROOK:
             # Check if the rook moved was in the Right half of the board.
-            if moving_piece.rook_corner in (
+            if Piece.get_the_specific_piece(moving_piece) == Piece.RIGHT_PIECE in (
                 RookCorner.BOTTOM_RIGHT,
                 RookCorner.TOP_RIGHT,
             ):
-                self.kings[moving_piece.color].r_castle["is_valid"] = False
-                self.castling_rights[moving_piece.color][1] = False
+                self.castling_rights[pcolor][1] = False
 
             # Check if the rook moved was in the Left half of the board.
-            if moving_piece.rook_corner in (
+            if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE in (
                 RookCorner.BOTTOM_LEFT,
                 RookCorner.TOP_LEFT,
             ):
-                self.kings[moving_piece.color].l_castle["is_valid"] = False
-                self.castling_rights[moving_piece.color][0] = False
+                self.castling_rights[pcolor][0] = False
 
     def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
         """Transform to a desired Piece.
@@ -155,11 +145,21 @@ class Board:
         # Slower but more compact
         return BoardStateList([[self.state[j, i] for i in range(8)] for j in range(8)])
 
-    def get_piece(self, coords: tuple) -> Piece:
+    @staticmethod
+    def get_piece(board_state, coords: Tuple[int, int]) -> int:
         """Given a coords it will return the piece that is there."""
-        return self.state[coords]
+        return board_state[coords]
 
-    def get_piece_coords(self, piece_code: int) -> Optional[Tuple[int, int]]:
+    @staticmethod
+    def update_piece_board_lists(piece_code: int,):
+        ...
+
+    @staticmethod
+    def get_all_color_pieces(all_pieces, color: Literal[Piece.WHITE, Piece.BLACK]) -> List[Tuple[int, Tuple[int, int]]]:
+        return all_pieces[Piece.get_color(color)]
+
+    @staticmethod
+    def get_piece_coords(all_pieces, piece_code: int) -> Optional[Tuple[int, int]]:
         """Given a piece_code find the coords of the piece.
 
         Find the piece obj that corrisponds to
@@ -170,14 +170,13 @@ class Board:
 
         pcolor = Piece.get_color(piece_code)
         ptype = Piece.get_type(piece_code)
-        pieces_list = self.w_pieces if pcolor == Piece.WHITE else self.b_pieces
+        pieces_list = Board.get_all_color_pieces(all_pieces, pcolor)
         for p_info in pieces_list[pcolor | ptype]:
             if piece_code == p_info[0]:
                 return p_info[1]
 
-    def organize_pieces(
-        self, all_pieces: List[Piece], is_whites: bool
-    ) -> Dict[int, List[int]]:
+    @staticmethod
+    def organize_pieces(all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
         """Given a team color it will return that team's pieces.
 
         Parameters
@@ -248,7 +247,8 @@ class Board:
             pieces.append((pc, coords))
         return state, pieces
 
-    def are_coords_under_attack(self, coords_list, enemy_color):
+    @staticmethod
+    def are_coords_under_attack(board_state: BoardStateList, coords_list: List[Tuple[int, int]], enemy_pieces: List[Tuple[int]]) -> bool:
         """Check if any of the given coords are being attacked.
 
         Parameters
@@ -266,14 +266,13 @@ class Board:
             Returns true if any of the coords are being attacked.
         """
         # Check if the king is in check from the rest of the pieces
-        enemy_moves = Piece.get_enemy_possible_coords(
-            self.all_pieces[enemy_color], self.state
-        )
+        enemy_moves = Piece.get_enemy_possible_coords(enemy_pieces, board_state)
         return any(tuple(coords) in enemy_moves for coords in coords_list)
 
-    def are_coords_empty(self, coords_list):
+    @staticmethod
+    def are_coords_empty(board_state: BoardStateList, coords_list: List[Tuple[int, int]]) -> bool:
         """Check if ALL the given coords are empty."""
-        return all(self.state[coords] == Piece.EMPTY for coords in coords_list)
+        return all(board_state[coords] == Piece.EMPTY for coords in coords_list)
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = "") -> int:

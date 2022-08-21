@@ -1,37 +1,42 @@
 """Includes the base class for each Piece."""
 from chess.move import MoveDirection, Move
-from typing import Tuple, Set
+from typing import Tuple, Set, Optional, List
 
 
 class Piece:
     """Base class that holds info about the piece."""
 
-    EMPTY = 0x0     # 0
-    KING = 0x1      # 1
-    PAWN = 0x2      # 2
-    KNIGHT = 0x3    # 3
-    BISHOP = 0x4    # 4
-    ROOK = 0x5      # 5
-    QUEEN = 0x6     # 6
+    EMPTY = 0x0  # 0
+    KING = 0x1  # 1
+    PAWN = 0x2  # 2
+    KNIGHT = 0x3  # 3
+    BISHOP = 0x4  # 4
+    ROOK = 0x5  # 5
+    QUEEN = 0x6  # 6
 
-    A_PAWN = 0x10                # 16
-    B_PAWN = 0x20                # 32
-    C_PAWN = 0x30                # 48
-    D_PAWN = 0x40                # 64
-    E_PAWN = 0x50                # 80
-    F_PAWN = 0x60                # 96
-    G_PAWN = 0x70                # 112
-    H_PAWN = 0x80                # 128
-    LEFT_PIECE = 0x90            # 144
-    RIGHT_PIECE = 0xA0           # 160
+    A_PAWN = 0x10  # 16
+    B_PAWN = 0x20  # 32
+    C_PAWN = 0x30  # 48
+    D_PAWN = 0x40  # 64
+    E_PAWN = 0x50  # 80
+    F_PAWN = 0x60  # 96
+    G_PAWN = 0x70  # 112
+    H_PAWN = 0x80  # 128
+    LEFT_PIECE = 0x90  # 144
+    RIGHT_PIECE = 0xA0  # 160
 
-    WHITE = 0x100      # 256
-    BLACK = 0x200      # 512
-    INVALID = 0x300   # 4096
+    WHITE = 0x100  # 256
+    BLACK = 0x200  # 512
+    INVALID = 0x300  # 4096
 
-    TYPE_MASK = 0xF           # 7
+    TYPE_MASK = 0xF  # 7
     UNIQUE_PIECE_MASK = 0xF0  # 240
-    COLOR_MASK = 0xF00        # 3840
+    COLOR_MASK = 0xF00  # 3840
+
+    WK_R_CASTLE = [(7, 5), (7, 6)]
+    BK_R_CASTLE = [(0, 5), (0, 6)]
+    WK_L_CASTLE = [(7, 3), (7, 2), (7, 1)]
+    BK_L_CASTLE = [(0, 3), (0, 2), (0, 1)]
 
     @staticmethod
     def get_the_specific_piece(piece_code: int) -> int:
@@ -41,7 +46,11 @@ class Piece:
     @staticmethod
     def get_enemy_color(our_piece_code: int) -> int:
         """Given a piece code return the enemy color."""
-        return Piece.WHITE if Piece.get_color(our_piece_code) == Piece.BLACK else Piece.BLACK
+        return (
+            Piece.WHITE
+            if Piece.get_color(our_piece_code) == Piece.BLACK
+            else Piece.BLACK
+        )
 
     @staticmethod
     def get_enemy_possible_coords(enemy_pieces, board_state):
@@ -50,16 +59,37 @@ class Piece:
         for piece_code, enemy_list in enemy_pieces.items():
             for en in enemy_list:
                 if piece_code == Piece.PAWN:
-                    enemy_possible_coords = enemy_possible_coords | en.get_attack_possible_coords(board_state)
+                    enemy_possible_coords = (
+                        enemy_possible_coords
+                        | en.get_attack_possible_coords(board_state)
+                    )
                 else:
-                    enemy_possible_coords = enemy_possible_coords | en.get_possible_coords(board_state)
+                    enemy_possible_coords = (
+                        enemy_possible_coords | en.get_possible_coords(board_state)
+                    )
         return enemy_possible_coords
+
+    @staticmethod
+    def get_castle_coords(piece_code: int) -> Optional[List[Tuple[int, int]]]:
+        if Piece.get_type(piece_code) == Piece.KING:
+            return {
+                Piece.WHITE | Piece.RIGHT_PIECE: [(7, 5), (7, 6)],
+                Piece.WHITE | Piece.LEFT_PIECE: [(7, 3), (7, 2), (7, 1)],
+                Piece.BLACK | Piece.RIGHT_PIECE: [(0, 5), (0, 6)],
+                Piece.BLACK | Piece.LEFT_PIECE: [(0, 3), (0, 2), (0, 1)]
+            }[Piece.get_color(piece_code) | Piece.get_the_specific_piece(piece_code)]
+        return None
 
     @staticmethod
     def rook_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+        for md in [
+            MoveDirection.UP,
+            MoveDirection.DOWN,
+            MoveDirection.LEFT,
+            MoveDirection.RIGHT,
+        ]:
             Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
         return moves
 
@@ -67,23 +97,45 @@ class Piece:
     def bishop_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+        for md in [
+            MoveDirection.UP_LEFT,
+            MoveDirection.UP_RIGHT,
+            MoveDirection.DOWN_LEFT,
+            MoveDirection.DOWN_RIGHT,
+        ]:
             Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
         return moves
 
     @staticmethod
     def knight_moves(board_state, piece_info):
-        """Override the get_moves from Piece class."""
-        moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
-            Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
-        return moves
+        """Knight moves."""
+        # We could get 'fancy' and use permutation but it generates 4 more cases
+        # which we do not need and it would take couple ifs to get rid of them.
+        pcoords = piece_info[1]
+        possible_coords = [
+            (pcoords[0] - 1, pcoords[1] - 2),
+            (pcoords[0] - 2, pcoords[1] - 1),
+            (pcoords[0] + 1, pcoords[1] - 2),
+            (pcoords[0] + 2, pcoords[1] - 1),
+            (pcoords[0] + 1, pcoords[1] + 2),
+            (pcoords[0] + 2, pcoords[1] + 1),
+            (pcoords[0] - 1, pcoords[1] + 2),
+            (pcoords[0] - 2, pcoords[1] + 1),
+        ]
+
+        return {
+            c
+            for c in possible_coords
+            if board_state[c] == Piece.EMPTY
+            or Piece.get_color(board_state[c]) == Piece.get_enemy_color(piece_info[0])
+        }
 
     @staticmethod
     def queen_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,
+                   MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
             Piece.add_moves_in_direction(board_state, 8, piece_info, moves, md)
         return moves
 
@@ -91,31 +143,52 @@ class Piece:
     def king_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
-            Piece.add_moves_in_direction(board_state, 1, piece_info, moves, md)
+        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,
+                   MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
+            Piece.add_moves_in_direction(board_state, 2, piece_info, moves, md)
         return moves
 
     @staticmethod
     def pawn_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT]:
+        for md in [
+            MoveDirection.UP,
+            MoveDirection.DOWN,
+            MoveDirection.LEFT,
+            MoveDirection.RIGHT,
+        ]:
             Piece.add_moves_in_direction(board_state, 1, piece_info, moves, md)
         return moves
 
     @staticmethod
-    def get_possible_coords(piece_info: Tuple[int, Tuple[int, int]], board_state):
+    def get_possible_coords(piece_info: Tuple[int, Tuple[int, int]], board_state) -> Set[Tuple[int, int]]:
+        """Return all the possible coords for a piece.
+
+        Returns all the possible coords given a piece_code and a board_state.
+
+        Parameters
+        ----------
+            piece_info : Tuple[int, Tuple[int, int]]
+                It containers the piece_code and the coordinates of the piece.
+        """
         return {
             Piece.KING: Piece.king_moves,
             Piece.PAWN: Piece.pawn_moves,
             Piece.KNIGHT: Piece.knight_moves,
             Piece.BISHOP: Piece.bishop_moves,
             Piece.ROOK: Piece.rook_moves,
-            Piece.QUEEN: Piece.queen_moves
+            Piece.QUEEN: Piece.queen_moves,
         }[Piece.get_type(piece_info[0])](board_state, piece_info)
 
     @staticmethod
-    def add_moves_in_direction(board_state, range_limit: int, piece_info: Tuple[int, Tuple[int, int]], coords_set: Set[Tuple[int]], direction: MoveDirection) -> None:
+    def add_moves_in_direction(
+        board_state,
+        range_limit: int,
+        piece_info: Tuple[int, Tuple[int, int]],
+        coords_set: Set[Tuple[int]],
+        direction: MoveDirection,
+    ) -> None:
         """Found the all moves based of the 'direction' a direction.
 
         Given a direction it will generate all the moves until it hits either:
@@ -170,21 +243,21 @@ class Piece:
         ptype = Piece.get_type(piece_code)
         color = Piece.get_color(piece_code)
         if ptype == Piece.PAWN:
-            return '♙' if color == Piece.WHITE else '♟︎'
+            return "♙" if color == Piece.WHITE else "♟︎"
         elif ptype == Piece.BISHOP:
-            return '♗' if color == Piece.WHITE else '♝︎'
+            return "♗" if color == Piece.WHITE else "♝︎"
         elif ptype == Piece.KNIGHT:
-            return '♘' if color == Piece.WHITE else '♞︎'
+            return "♘" if color == Piece.WHITE else "♞︎"
         elif ptype == Piece.ROOK:
-            return '♖' if color == Piece.WHITE else '♜︎'
+            return "♖" if color == Piece.WHITE else "♜︎"
         elif ptype == Piece.QUEEN:
-            return '♕' if color == Piece.WHITE else '♛︎'
+            return "♕" if color == Piece.WHITE else "♛︎"
         elif ptype == Piece.KING:
-            return '♔' if color == Piece.WHITE else '♚︎'
+            return "♔" if color == Piece.WHITE else "♚︎"
         elif ptype == Piece.EMPTY:
-            return ' '
+            return " "
         else:
-            raise Exception('Not a valid piece_code to get a symbol!')
+            raise Exception("Not a valid piece_code to get a symbol!")
 
     @staticmethod
     def get_color(piece_code: int) -> int:
@@ -231,27 +304,27 @@ class Piece:
             The path of the piece img.
         """
         if piece_code == Piece.EMPTY:
-            return ''
+            return ""
         path = f"{imgs_path}/"
         color = Piece.get_color(piece_code)
         ptype = Piece.get_type(piece_code)
 
         if color == Piece.WHITE:
-            path += 'w'
+            path += "w"
         elif color == Piece.BLACK:
-            path += 'b'
+            path += "b"
 
         if ptype == Piece.KING:
-            path += 'k'
+            path += "k"
         elif ptype == Piece.PAWN:
-            path += 'p'
+            path += "p"
         elif ptype == Piece.KNIGHT:
-            path += 'n'
+            path += "n"
         elif ptype == Piece.BISHOP:
-            path += 'b'
+            path += "b"
         elif ptype == Piece.ROOK:
-            path += 'r'
+            path += "r"
         elif ptype == Piece.QUEEN:
-            path += 'q'
+            path += "q"
 
         return f"{path}.png"

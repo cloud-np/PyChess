@@ -3,7 +3,7 @@ from uuid import uuid4
 from uuid import UUID
 from typing import List, Tuple, Optional, Set
 
-from chess.board import Board, BoardUtils
+from chess.board import Board, BoardUtils, BoardStateList
 from datetime import datetime
 from chess.pieces.piece import Piece
 from chess.pieces.pawn import Pawn
@@ -80,11 +80,11 @@ class Game:
         bool
             Whether or not the move is valid.
         """
-        piece_code: int = self.board.get_piece(start_coords)
+        piece_code: int = Board.get_piece(self.board.state, start_coords)
         if piece_code == Piece.EMPTY:
             return False
 
-        all_possible_coords = self.get_piece_possible_coords(piece_code, start_coords)
+        all_possible_coords = Game.get_piece_possible_coords(piece_code, start_coords, self.board.state)
 
         # Remove the illegal moves
         # all_possible_coords -= self.get_piece_illegal_coords(piece_code, all_possible_coords)
@@ -124,17 +124,38 @@ class Game:
         return self.moves_history[-1] if len(self.moves_history) == 0 else None
 
     # NOTE: Add en passant.
-    def get_piece_possible_coords(self, piece_code: int, start_coords: Tuple[int, int]) -> Set[Tuple[int, int]]:
+    @staticmethod
+    def get_piece_possible_coords(piece_code: int, start_coords: Tuple[int, int], board_state: BoardStateList) -> Set[Tuple[int, int]]:
         """Get all the possible coords."""
-        coords_set = Piece.get_possible_coords((piece_code, start_coords), self.board.state)
-        # if isinstance(piece_code, King):
-        #     if castling_moves := piece_code.get_castling_coords(self.board):
-        #         coords_set = coords_set | castling_moves
+        coords_set = Piece.get_possible_coords((piece_code, start_coords), board_state)
+        if Piece.get_type(piece_code) == Piece.KING:
+            if castling_moves := Game.get_castling_coords(piece_code):
+                coords_set = coords_set | castling_moves
         # if isinstance(piece_code, Pawn) and self.board.last_piece_moved is not None:
         #     if en_passant_move := piece_code.get_en_passant_coords(self.board.last_piece_moved, self.board.en_passant_coords):
         #         if en_passant_move is not None:
         #             coords_set = coords_set | en_passant_move
         return coords_set
+
+    @staticmethod
+    def get_castling_coords(piece_code: int, castle_rights, board_state, ) -> Set[Tuple[int, int]]:
+        """Try adding the roke moves if they are valid."""
+        castle_coords = {}
+
+        pcolor = Piece.get_color(piece_code)
+
+        # Left castle
+        if castle_rights[pcolor][1]:
+            lcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code)
+            if not Board.are_coords_under_attack(board_state, lcastle, Piece.get_enemy_color(piece_code)) and Board.are_coords_empty(lcastle):
+                castle_coords.add((7, 6) if pcolor == Piece.WHITE else (0, 6))
+
+        # Right castle
+        if castle_rights[pcolor][0]:
+            rcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code)
+            if not Board.are_coords_under_attack(board_state, rcastle, Piece.get_enemy_color(piece_code)) and Board.are_coords_empty(rcastle):
+                castle_coords.add((7, 2) if pcolor == Piece.WHITE else (0, 2))
+        return castle_coords
 
     def get_last_piece_moved(self) -> Optional[Piece]:
         """Get the last piece moved."""
