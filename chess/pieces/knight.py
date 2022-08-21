@@ -43,6 +43,6 @@ class Knight(Piece):
             #     pass
             if piece_code == Piece.EMPTY:
                 coords_set.add(coords)
-            elif Piece.get_colour(piece_code) == self.enemy_color:
+            elif Piece.get_color(piece_code) == self.enemy_color:
                 coords_set.add(coords)
         return coords_set

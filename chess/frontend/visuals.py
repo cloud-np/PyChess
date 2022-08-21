@@ -341,7 +341,7 @@ class GameVisuals:
         if self.picked_piece["coords"] == coords:
             return True
         # If the Piece the user is trying to pick is not its turn to play he/she simply can't pick it.
-        elif Piece.get_colour(self.game.board.state[coords]) != self.game.board.colour_to_move:
+        elif Piece.get_color(self.game.board.state[coords]) != self.game.board.colour_to_move:
             return False
         elif self.tiles[coords[0]][coords[1]].piece_img is not None and self.game.is_piece_pickable(piece):
 

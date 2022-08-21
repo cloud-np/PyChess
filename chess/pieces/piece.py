@@ -6,21 +6,38 @@ from typing import Tuple, Set
 class Piece:
     """Base class that holds info about the piece."""
 
-    EMPTY = 0
-    KING = 1
-    PAWN = 2
-    KNIGHT = 3
-    BISHOP = 4
-    ROOK = 5
-    QUEEN = 6
+    # Maybe I should swap soon to HEX representation
+    EMPTY = 0b0     # 0
+    KING = 0b1      # 1
+    PAWN = 0b10     # 2
+    KNIGHT = 0b11   # 3
+    BISHOP = 0b100  # 4
+    ROOK = 0b101    # 5
+    QUEEN = 0b110   # 6
 
-    WHITE = 8
-    BLACK = 16
-    INVALID = 32
+    # I need 4 bits for pawns becuase when they promote
+    # I can now which pawn promated to what.
+    A_PAWN = 0b0001_000  # 8
+    B_PAWN = 0b0010_000  # 16
+    C_PAWN = 0b0011_000  # 24
+    D_PAWN = 0b0100_000  # 32
+    E_PAWN = 0b0101_000  # 40
+    F_PAWN = 0b0110_000  # 48
+    G_PAWN = 0b0111_000  # 56
+    H_PAWN = 0b1000_000  # 64
 
-    TYPE_MASK = 0b000111
-    COLOUR_MASK = 0b011000
-    ERROR_MASK = 0b100000
+    LEFT = 0b01_0000_000   # 128
+    RIGHT = 0b10_0000_000  # 256
+
+    WHITE = 0b01_00_0000_000      # 512
+    BLACK = 0b10_00_0000_000      # 1024
+    INVALID = 0b1_00_00_0000_000  # 2048
+
+    TYPE_MASK = 0b111                # 7
+    PAWN_MASK = 0b1111_000           # 120
+    POS_MASK = 0b11_0000_000         # 384
+    COLOR_MASK = 0b11_00_0000_000    # 1536
+    ERROR_MASK = 0b1_00_00_0000_000  # 2048
 
     def __init__(self, piece_code: int, coords: tuple):
         """Init the piece.
@@ -37,7 +54,7 @@ class Piece:
             The coordinates of the piece.
         """
         self.piece_code: int = piece_code
-        self.color: int = Piece.get_colour(piece_code)
+        self.color: int = Piece.get_color(piece_code)
         self.enemy_color: int = Piece.get_enemy_colour(piece_code)
         self.ptype: int = Piece.get_type(piece_code)
         self.symbol: int = Piece.get_symbol(piece_code)
@@ -58,17 +75,15 @@ class Piece:
 
     def __eq__(self, other: 'Piece'):
         """Overload the == when it is applied on two Piece classes to check if they are equal based on their coords and piececode."""
-        if not isinstance(other, Piece):
-            return False
-        return self.__key() == other.__key()
+        return self.__key() == other.__key() if isinstance(other, Piece) else False
 
     def __key(self):
-        return tuple((self.piece_code, *self.coords))
+        return self.piece_code, *self.coords
 
     @staticmethod
     def get_enemy_colour(piece_code):
         """Given a piece code return the enemy colour."""
-        color = Piece.get_colour(piece_code)
+        color = Piece.get_color(piece_code)
         return Piece.WHITE if color == Piece.BLACK else Piece.BLACK
 
     @staticmethod
@@ -103,9 +118,9 @@ class Piece:
         """
         direction_func = Move.get_direction_func(direction)
         for i in range(1, self.range_limit):
-            coords: tuple[int] = direction_func(self.coords, i)
+            coords: Tuple[int, int] = direction_func(self.coords, i)
             piece_code = board_state[coords]
-            color = Piece.get_colour(piece_code)
+            color = Piece.get_color(piece_code)
             if piece_code == Piece.EMPTY:
                 coords_set.add(coords)
             elif piece_code == Piece.INVALID or color == self.color:
@@ -150,7 +165,7 @@ class Piece:
     def get_symbol(piece_code: int) -> str:
         """Return the correct unicode symbol."""
         ptype = Piece.get_type(piece_code)
-        color = Piece.get_colour(piece_code)
+        color = Piece.get_color(piece_code)
         if ptype == Piece.PAWN:
             return '♙' if color == Piece.WHITE else '♟︎'
         elif ptype == Piece.BISHOP:
@@ -169,7 +184,7 @@ class Piece:
             raise Exception('Not a valid piece_code to get a symbol!')
 
     @staticmethod
-    def get_colour(piece_code: int) -> int:
+    def get_color(piece_code: int) -> int:
         """Filter the piece_code and find the piece colour.
 
         Parameters
@@ -215,7 +230,7 @@ class Piece:
         if piece_code == Piece.EMPTY:
             return ''
         path = f"{imgs_path}/"
-        color = Piece.get_colour(piece_code)
+        color = Piece.get_color(piece_code)
         ptype = Piece.get_type(piece_code)
 
         if color == Piece.WHITE:

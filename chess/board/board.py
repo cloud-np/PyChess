@@ -182,7 +182,7 @@ class Board:
         if piece_code == Piece.EMPTY:
             return None
 
-        color = Piece.get_colour(piece_code)
+        color = Piece.get_color(piece_code)
         if color == Piece.WHITE:
             pieces = [
                 piece
@@ -312,7 +312,7 @@ class Board:
 
     # FIXME Needs refactoring because of the new board representation.
     def get_tile_from_piece(self, piece_code: int, row: int = -1, col: str = "") -> int:
-        colour = Piece.get_colour(piece_code)
+        colour = Piece.get_color(piece_code)
 
         _col = None
         if row != -1:

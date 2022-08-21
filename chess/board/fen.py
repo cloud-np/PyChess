@@ -48,7 +48,7 @@ class Fen:
         for row in board_state:
             for piece_code in row:
                 ptype = Piece.get_type(piece_code)
-                colour = Piece.get_colour(piece_code)
+                colour = Piece.get_color(piece_code)
                 if ptype == Piece.EMPTY:
                     pos += 1
                 elif pos > 0:

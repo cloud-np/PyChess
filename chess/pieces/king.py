@@ -37,7 +37,7 @@ class King(Piece):
             The coordinates of the piece.
         """
         self.range_limit = 2
-        piece_colour = Piece.get_colour(piece_code)
+        piece_colour = Piece.get_color(piece_code)
         self.r_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
         super().__init__(piece_code, coords)
