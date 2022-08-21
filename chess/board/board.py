@@ -1,5 +1,5 @@
 """Board module contains all the classes and methods which are needed for a chessboard to be functional."""
-from typing import Dict, List, Tuple, Literal, Union, Any
+from typing import Dict, List, Tuple, Literal, Union, Any, Optional
 from .board_utils import BoardUtils
 from .fen import Fen
 from chess.pieces.piece import Piece
@@ -51,6 +51,7 @@ class Board:
             A way to represent the board state.
         """
         self.starting_fen: str = fen
+        self.last_piece_moved: Optional[Piece] = None
 
         self.colour_to_move: Literal[Piece.WHITE, Piece.BLACK]
         self.castling_rights: Dict[Tuple[int, int], Tuple[int, int]]

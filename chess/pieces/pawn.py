@@ -24,7 +24,7 @@ class Pawn(Piece):
         """
         super().__init__(piece_code, coords)
 
-    def get_attack_possible_coords(self, board_state, coords_set=None):
+    def get_attack_possible_coords(self, board_state, coords_set: Optional[Set[Tuple[int, int]]] = None):
         """Get the attackable coords for the pawn."""
         if coords_set is None:
             coords_set = set()
@@ -39,14 +39,16 @@ class Pawn(Piece):
         # Left enemy
         left_enemy = board_state[l_coords]
         if (
-            left_enemy != Piece.EMPTY and Piece.get_colour(left_enemy) == self.enemy_color
+            left_enemy != Piece.EMPTY
+            and Piece.get_colour(left_enemy) == self.enemy_color
         ):
             coords_set.add(l_coords)
 
         # Right enemy
         right_enemy = board_state[r_coords]
         if (
-            right_enemy != Piece.EMPTY and Piece.get_colour(right_enemy) == self.enemy_color
+            right_enemy != Piece.EMPTY
+            and Piece.get_colour(right_enemy) == self.enemy_color
         ):
             coords_set.add(r_coords)
 
@@ -59,13 +61,18 @@ class Pawn(Piece):
     def get_transform_possible_coords(self, board_state):
         ...
 
-    def get_en_passant_coords(self, board_state, en_passant_coords: Optional[Tuple[int, int]]) -> Optional[Set[int]]:
-        # if en_passant_coords is not None:
-            
-        #     en_passant_coords[1]
-            # if board_state[]:
-                # ...
-        return set(en_passant_coords) if en_passant_coords else None
+    def get_en_passant_coords(
+        self,
+        enemy_piece: 'Pawn',
+        en_passant_coords: Optional[Tuple[int, int]],
+    ) -> Optional[Set[int]]:
+        return (
+            {en_passant_coords}
+            if en_passant_coords is not None
+            and enemy_piece.color == self.enemy_color
+            and abs(self.coords[1] - enemy_piece.coords[1]) == 1
+            else None
+        )
 
     # TODO: Maybe we can write this a bit more cleanly?
     def get_possible_coords(self, board_state):

@@ -1,7 +1,7 @@
 """uuid: A unique undentifier."""
 from uuid import uuid4
 from uuid import UUID
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Set
 
 from chess.board import Board, BoardUtils
 from datetime import datetime
@@ -87,7 +87,7 @@ class Game:
         all_possible_coords = self.get_piece_possible_coords(piece, start_coords)
 
         # Remove the illegal moves
-        all_possible_coords = all_possible_coords - self.get_illegal_coords(piece, all_possible_coords)
+        all_possible_coords -= self.get_piece_illegal_coords(piece, all_possible_coords)
 
         # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
@@ -99,7 +99,8 @@ class Game:
 
         return end_coords in all_possible_coords
 
-    def get_all_possible_moves(self) -> set:
+    # NOTE: Why not just call get_piece_possible_coords for each piece???
+    def get_all_possible_moves(self) -> List[Tuple[int, int]]:
         """Get all the possible moves."""
         # colors_turn = Piece.WHITE if  else Piece.BLACK
         moves = []
@@ -107,13 +108,14 @@ class Game:
             for piece in piece_list:
                 coords_set = set()
                 coords_set = coords_set | piece.get_possible_coords(self.board.state)
-                if isinstance(piece, King):
-                    if castling_moves := piece.get_castling_coords(self.board):
-                        coords_set = coords_set | castling_moves
-                if isinstance(piece, Pawn):
-                    if en_pssant_moved := piece.get_en_passant_coords(self.board.state, self.board.en_passant_coords):
-                        coords_set = coords_set | castling_moves
-                coords_set = coords_set - self.get_illegal_coords(piece, coords_set)
+                # if isinstance(piece, King):
+                #     if castling_moves := piece.get_castling_coords(self.board):
+                #         coords_set = coords_set | castling_moves
+                # if isinstance(piece, Pawn) and self.board.last_piece_moved is not None:
+                #     if en_passant_move := piece.get_en_passant_coords(self.board.last_piece_moved, self.board.en_passant_coords):
+                #         if en_passant_move is not None:
+                #             coords_set = coords_set | en_passant_move
+                coords_set = coords_set - self.get_piece_illegal_coords(piece, coords_set)
                 moves.append((piece.coords, coords_set))
         return moves
 
@@ -122,20 +124,29 @@ class Game:
         return self.moves_history[-1] if len(self.moves_history) == 0 else None
 
     # NOTE: Add en passant.
-    def get_piece_possible_coords(self, piece, start_coords) -> set:
+    def get_piece_possible_coords(self, piece, start_coords: Tuple[int, int]) -> Set[Tuple[int, int]]:
         """Get all the possible coords."""
         coords_set = piece.get_possible_coords(self.board.state)
         if isinstance(piece, King):
             if castling_moves := piece.get_castling_coords(self.board):
                 coords_set = coords_set | castling_moves
-        if isinstance(piece, Pawn):
-            ...
-            # if en_passant_move := piece.get_en_passant_coords(self.board.en_passant_coords):
-            #     if en_passant_move is not None:
-            #         coords_set = coords_set | en_passant_move
+        if isinstance(piece, Pawn) and self.board.last_piece_moved is not None:
+            if en_passant_move := piece.get_en_passant_coords(self.board.last_piece_moved, self.board.en_passant_coords):
+                if en_passant_move is not None:
+                    coords_set = coords_set | en_passant_move
         return coords_set
 
-    def get_illegal_coords(self, piece, coords_set) -> set:
+    def get_last_piece_moved(self) -> Optional[Piece]:
+        """Get the last piece moved."""
+        if len(self.moves_history) > 0:
+            return self.board.get_piece(self.board.state[self.get_last_played_move().end_coords])
+        return None
+
+    def is_last_piece_same_color(self, piece):
+        """Whether or not the last piece played is the same color as the given piece."""
+        return self.get_last_piece_moved().color == piece.color
+
+    def get_piece_illegal_coords(self, piece, coords_set) -> set:
         """Get the illegal coords.
 
         Parameters
@@ -288,6 +299,7 @@ class Game:
         self.board.state[new_coords] = self.board.state[old_coords]
         self.board.state[old_coords] = Piece.EMPTY
         self.board.fen = self.board.get_fen()
+        self.board.last_piece_moved = moving_piece
         return castling_info
 
     def get_castling_rook_positions(self, castling_side: int) -> tuple:

@@ -10,9 +10,9 @@ class Piece:
     KING = 1
     PAWN = 2
     KNIGHT = 3
-    BISHOP = 5
-    ROOK = 6
-    QUEEN = 7
+    BISHOP = 4
+    ROOK = 5
+    QUEEN = 6
 
     WHITE = 8
     BLACK = 16
