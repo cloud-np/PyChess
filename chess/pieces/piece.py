@@ -6,38 +6,33 @@ from typing import Tuple, Set
 class Piece:
     """Base class that holds info about the piece."""
 
-    # Maybe I should swap soon to HEX representation
-    EMPTY = 0b0     # 0
-    KING = 0b1      # 1
-    PAWN = 0b10     # 2
-    KNIGHT = 0b11   # 3
-    BISHOP = 0b100  # 4
-    ROOK = 0b101    # 5
-    QUEEN = 0b110   # 6
+    EMPTY = 0x0     # 0
+    KING = 0x1      # 1
+    PAWN = 0x2      # 2
+    KNIGHT = 0x3    # 3
+    BISHOP = 0x4    # 4
+    ROOK = 0x5      # 5
+    QUEEN = 0x6     # 6
 
-    # I need 4 bits for pawns becuase when they promote
-    # I can now which pawn promated to what.
-    A_PAWN = 0b0001_000  # 8
-    B_PAWN = 0b0010_000  # 16
-    C_PAWN = 0b0011_000  # 24
-    D_PAWN = 0b0100_000  # 32
-    E_PAWN = 0b0101_000  # 40
-    F_PAWN = 0b0110_000  # 48
-    G_PAWN = 0b0111_000  # 56
-    H_PAWN = 0b1000_000  # 64
+    A_PAWN = 0x10                # 16
+    B_PAWN = 0x20                # 32
+    C_PAWN = 0x30                # 48
+    D_PAWN = 0x40                # 64
+    E_PAWN = 0x50                # 80
+    F_PAWN = 0x60                # 96
+    G_PAWN = 0x70                # 112
+    H_PAWN = 0x80                # 128
+    LEFT_PIECE = 0x90            # 144
+    RIGHT_PIECE = 0xA0           # 160
 
-    LEFT = 0b01_0000_000   # 128
-    RIGHT = 0b10_0000_000  # 256
+    WHITE = 0x100      # 256
+    BLACK = 0x200      # 512
+    INVALID = 0x1000   # 4096
 
-    WHITE = 0b01_00_0000_000      # 512
-    BLACK = 0b10_00_0000_000      # 1024
-    INVALID = 0b1_00_00_0000_000  # 2048
-
-    TYPE_MASK = 0b111                # 7
-    PAWN_MASK = 0b1111_000           # 120
-    POS_MASK = 0b11_0000_000         # 384
-    COLOR_MASK = 0b11_00_0000_000    # 1536
-    ERROR_MASK = 0b1_00_00_0000_000  # 2048
+    TYPE_MASK = 0xF          # 7
+    UNIQUE_PIECE_MAS = 0xF0  # 240
+    COLOR_MASK = 0xF00       # 3840
+    ERROR_MASK = 0xF000      # 61440
 
     def __init__(self, piece_code: int, coords: tuple):
         """Init the piece.
