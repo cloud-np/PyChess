@@ -68,10 +68,10 @@ class Board:
         self.all_pieces = {Piece.WHITE: w_pieces, Piece.BLACK: b_pieces}
 
         # Kings
-        self.kings = {
-            Piece.WHITE: w_pieces[Piece.KING | Piece.WHITE][0],
-            Piece.BLACK: b_pieces[Piece.KING | Piece.BLACK][0],
-        }
+        # self.kings = {
+        #     Piece.WHITE: w_pieces[Piece.KING | Piece.WHITE][0],
+        #     Piece.BLACK: b_pieces[Piece.KING | Piece.BLACK][0],
+        # }
 
         self.dead_pieces: List[int] = []
         self.correct_format_print()
@@ -133,13 +133,14 @@ class Board:
         else:
             self.b_pieces[dead_piece.piece_code].remove(dead_piece)
 
-    def simulated_board_state(self):
+    @staticmethod
+    def simulate_board_state(board_state: BoardStateList) -> BoardStateList:
         """Given a board state it will return a 'simulated' board state.
 
         This will allows us to affect the board state without actually changing it.
         """
         # Slower but more compact
-        return BoardStateList([[self.state[j, i] for i in range(8)] for j in range(8)])
+        return BoardStateList([[baord_state[j, i] for i in range(8)] for j in range(8)])
 
     @staticmethod
     def get_piece(board_state, coords: Tuple[int, int]) -> int:

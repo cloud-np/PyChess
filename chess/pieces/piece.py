@@ -90,6 +90,30 @@ class Piece:
         )
 
     @staticmethod
+    def is_king_in_check(enemies_pieces, board_state, our_king_coords: Tuple[int, int]) -> bool:
+        """Check if the king is in check."""
+        # Check if the king is in check from the rest of the pieces
+        enemy_possible_coords = set()
+        enemy_color = Piece.get_enemy_color(our_king_coords)
+        for piece_code, enemy_list in enemies_pieces.items():
+            if piece_code == Piece.PAWN | enemy_color:
+                continue
+
+            # NOTE: Keep track of the attacking direction of the enemy piece.
+            #       THERE MAY BE 2 DIRECTIONS OF ATTACKING.
+            for en, en_coords in enemy_list:
+                if our_king_coords in Piece.get_possible_coords((en, en_coords), board_state):
+                    return True
+
+        # Check if the king is in check from pawns
+        for en_pawn in enemies_pieces[Piece.PAWN | enemy_color]:
+            enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(board_state)
+            if self.coords in enemy_possible_coords:
+                return True
+
+        return False
+
+    @staticmethod
     def get_enemy_possible_coords(enemy_pieces, board_state):
         """Get all the enemy moves."""
         enemy_possible_coords = set()
@@ -183,6 +207,36 @@ class Piece:
         return moves
 
     @staticmethod
+    def pawn_attack_moves(board_state, coords_set: Optional[Set[Tuple[int, int]]] = None):
+        """Get the attackable coords for the pawn."""
+        if coords_set is None:
+            coords_set = set()
+
+        if self.color == Piece.WHITE:
+            l_coords = self.coords[0] - 1, self.coords[1] - 1
+            r_coords = self.coords[0] - 1, self.coords[1] + 1
+        else:
+            l_coords = self.coords[0] + 1, self.coords[1] - 1
+            r_coords = self.coords[0] + 1, self.coords[1] + 1
+
+        # Left enemy
+        left_enemy = board_state[l_coords]
+        if (
+            left_enemy != Piece.EMPTY
+            and Piece.get_color(left_enemy) == self.enemy_color
+        ):
+            coords_set.add(l_coords)
+
+        # Right enemy
+        right_enemy = board_state[r_coords]
+        if (
+            right_enemy != Piece.EMPTY
+            and Piece.get_color(right_enemy) == self.enemy_color
+        ):
+            coords_set.add(r_coords)
+        return coords_set
+
+    @staticmethod
     def pawn_moves(board_state, piece_info):
         """Override the get_moves from Piece class."""
         moves = set()
@@ -193,6 +247,35 @@ class Piece:
             MoveDirection.RIGHT,
         ]:
             Piece.add_moves_in_direction(board_state, 2, piece_info, moves, md)
+
+        """Override the get_moves from Piece class."""
+        moves = set()
+        piece_code, piece_coords = piece_info[0]
+        if Piece.get_color(piece_code) == Piece.WHITE:
+            if piece_coords[0] >= 1:
+                coords_to_go = piece_coords[0] - 1, piece_coords[1]
+                piece_code = board_state[coords_to_go]
+                if piece_code == Piece.EMPTY:
+                    moves.add(coords_to_go)
+            if piece_coords[0] == 6:
+                coords_to_go = piece_coords[0] - 2, piece_coords[1]
+                piece_code = board_state[piece_coords[0] - 1, piece_coords[1]]
+                piece_code2 = board_state[coords_to_go]
+                if piece_code == Piece.EMPTY and piece_code2 == Piece.EMPTY:
+                    moves.add(coords_to_go)
+        else:
+            if piece_coords[0] <= 6:
+                coords_to_go = piece_coords[0] + 1, piece_coords[1]
+                piece_code = board_state[coords_to_go]
+                if piece_code == Piece.EMPTY:
+                    moves.add(coords_to_go)
+            if piece_coords[0] == 1:
+                coords_to_go = piece_coords[0] + 2, piece_coords[1]
+                piece_code = board_state[piece_coords[0] + 1, piece_coords[1]]
+                piece_code2 = board_state[coords_to_go]
+                if piece_code == Piece.EMPTY and piece_code2 == Piece.EMPTY:
+                    moves.add(coords_to_go)
+        self.get_attack_possible_coords(board_state, moves)
         return moves
 
     @staticmethod

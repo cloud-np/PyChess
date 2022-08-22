@@ -87,7 +87,7 @@ class Game:
         all_possible_coords = Game.get_piece_possible_coords(piece_code, start_coords, self.board.state, self.board.castle_rights, self.board.all_pieces, self.board.last_piece_moved)
 
         # Remove the illegal moves
-        # all_possible_coords -= self.get_piece_illegal_coords(piece_code, all_possible_coords)
+        all_possible_coords -= self.get_piece_illegal_coords(piece_code, all_possible_coords)
 
         # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
@@ -115,7 +115,7 @@ class Game:
                 #     if en_passant_move := piece.get_en_passant_coords(self.board.last_piece_moved, self.board.en_passant_coords):
                 #         if en_passant_move is not None:
                 #             coords_set = coords_set | en_passant_move
-                coords_set = coords_set - self.get_piece_illegal_coords(piece, coords_set)
+                coords_set = coords_set - Game.get_piece_illegal_coords(piece, coords_set)
                 moves.append((piece.coords, coords_set))
         return moves
 
@@ -171,7 +171,8 @@ class Game:
         """Whether or not the last piece played is the same color as the given piece."""
         return self.get_last_piece_moved().color == piece.color
 
-    def get_piece_illegal_coords(self, piece, coords_set) -> set:
+    @staticmethod
+    def get_piece_illegal_coords(board_state: BoardStateList, all_pieces, piece_code: int, coords_set) -> set:
         """Get the illegal coords.
 
         Parameters
@@ -189,10 +190,10 @@ class Game:
             All the illegal moves
         """
         # For each simulated move, if the king is in check, then the move is invalid.
-        sim_state = self.board.simulated_board_state()
+        sim_state = Board.simulate_board_state(board_state)
         illegal_coords = set()
-        king = self.board.kings[piece.color]
-        enemy_pieces = self.board.all_pieces[piece.enemy_color]
+        king = all_pieces[Piece.get_color(piece_code) | Piece.KING][0]
+        enemy_pieces = all_pieces[Piece.get_enemy_color(piece_code)]
 
         @Game.simulate_move
         def __play_possibly_illegal_move(sim_state, start_coords, end_coords, piece):

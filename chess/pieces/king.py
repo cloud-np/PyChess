@@ -45,7 +45,6 @@ class King(Piece):
             possible_castle_coords.add((7, 2) if self.color == Piece.WHITE else (0, 2))
         return possible_castle_coords
 
-
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""
         # Check if the king is in check from the rest of the pieces
