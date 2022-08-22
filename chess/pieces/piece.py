@@ -2,6 +2,43 @@
 from chess.move import MoveDirection, Move
 from typing import Tuple, Set, Optional, List
 
+class CastleSide:
+    """Represents a side of a castle."""
+
+    WK_SIDE_L = 0
+    WK_SIDE_R = 1
+    BK_SIDE_L = 2
+    BK_SIDE_R = 3
+
+    @staticmethod
+    def get_side(end_coords) -> 'CastleSide':
+        """Return the side of the castle.
+
+        We use .get() to avoid KeyErrors.
+        """
+        return {
+            (7, 6): CastleSide.WK_SIDE_R,
+            (7, 2): CastleSide.WK_SIDE_L,
+            (0, 6): CastleSide.BK_SIDE_R,
+            (0, 2): CastleSide.BK_SIDE_L
+        }.get(end_coords)
+
+    @staticmethod
+    def get_rook_posistions(castling_side: int) -> tuple:
+        """Return the positions of the rooks involved in a castling.
+
+        Based on the castling side we return the positions of the rook before and after the castling.
+        """
+        if castling_side == CastleSide.WK_SIDE_R:
+            return (7, 5), (7, 7)
+        elif castling_side == CastleSide.WK_SIDE_L:
+            return (7, 3), (7, 0)
+        elif castling_side == CastleSide.BK_SIDE_R:
+            return (0, 5), (0, 7)
+        elif castling_side == CastleSide.BK_SIDE_L:
+            return (0, 3), (0, 0)
+        else:
+            raise ValueError("Invalid castling side.")
 
 class Piece:
     """Base class that holds info about the piece."""
@@ -56,28 +93,25 @@ class Piece:
     def get_enemy_possible_coords(enemy_pieces, board_state):
         """Get all the enemy moves."""
         enemy_possible_coords = set()
-        for piece_code, enemy_list in enemy_pieces.items():
-            for en in enemy_list:
-                if piece_code == Piece.PAWN:
-                    enemy_possible_coords = (
-                        enemy_possible_coords
-                        | en.get_attack_possible_coords(board_state)
-                    )
-                else:
-                    enemy_possible_coords = (
-                        enemy_possible_coords | en.get_possible_coords(board_state)
-                    )
+        for ptype, enemy_list in enemy_pieces.items():
+            for en, en_coords in enemy_list:
+                # if piece_code == Piece.PAWN:
+                #     enemy_possible_coords = enemy_possible_coords | en.get_attack_possible_coords(board_state)
+                # else:
+                enemy_possible_coords = (
+                    enemy_possible_coords | Piece.get_possible_coords((en, en_coords), board_state)
+                )
         return enemy_possible_coords
 
     @staticmethod
-    def get_castle_coords(piece_code: int) -> Optional[List[Tuple[int, int]]]:
+    def get_castle_coords(piece_code: int, side: int) -> Optional[List[Tuple[int, int]]]:
         if Piece.get_type(piece_code) == Piece.KING:
             return {
                 Piece.WHITE | Piece.RIGHT_PIECE: [(7, 5), (7, 6)],
                 Piece.WHITE | Piece.LEFT_PIECE: [(7, 3), (7, 2), (7, 1)],
                 Piece.BLACK | Piece.RIGHT_PIECE: [(0, 5), (0, 6)],
                 Piece.BLACK | Piece.LEFT_PIECE: [(0, 3), (0, 2), (0, 1)]
-            }[Piece.get_color(piece_code) | Piece.get_the_specific_piece(piece_code)]
+            }[Piece.get_color(piece_code) | side]
         return None
 
     @staticmethod
@@ -158,7 +192,7 @@ class Piece:
             MoveDirection.LEFT,
             MoveDirection.RIGHT,
         ]:
-            Piece.add_moves_in_direction(board_state, 1, piece_info, moves, md)
+            Piece.add_moves_in_direction(board_state, 2, piece_info, moves, md)
         return moves
 
     @staticmethod

@@ -49,13 +49,13 @@ class Board:
         self.last_piece_moved: Optional[Piece] = None
 
         self.color_to_move: Literal[Piece.WHITE, Piece.BLACK]
-        self.castling_rights: Dict[Tuple[int, int], Tuple[int, int]]
+        self.castle_rights: Dict[Tuple[int, int], Tuple[int, int]]
         self.en_passant_coords: Union[Tuple[int, int], str]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,
             self.color_to_move,
-            self.castling_rights,
+            self.castle_rights,
             self.en_passant_coords,
         ) = Fen.translate_to_state(fen)
 
@@ -81,7 +81,7 @@ class Board:
         # Only for the first time the King is moving.
         pcolor = Piece.get_color(moving_piece)
         if Piece.get_type(moving_piece) == Piece.KING:
-            self.castling_rights[pcolor] = [False, False]
+            self.castle_rights[pcolor] = [False, False]
 
         if Piece.get_type(moving_piece) == Piece.ROOK:
             # Check if the rook moved was in the Right half of the board.
@@ -89,14 +89,14 @@ class Board:
                 RookCorner.BOTTOM_RIGHT,
                 RookCorner.TOP_RIGHT,
             ):
-                self.castling_rights[pcolor][1] = False
+                self.castle_rights[pcolor][1] = False
 
             # Check if the rook moved was in the Left half of the board.
             if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE in (
                 RookCorner.BOTTOM_LEFT,
                 RookCorner.TOP_LEFT,
             ):
-                self.castling_rights[pcolor][0] = False
+                self.castle_rights[pcolor][0] = False
 
     def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
         """Transform to a desired Piece.
@@ -248,7 +248,7 @@ class Board:
         return state, pieces
 
     @staticmethod
-    def are_coords_under_attack(board_state: BoardStateList, coords_list: List[Tuple[int, int]], enemy_pieces: List[Tuple[int]]) -> bool:
+    def are_coords_under_attack(board_state: BoardStateList, coords_list: List[Tuple[int, int]], enemy_pieces) -> bool:
         """Check if any of the given coords are being attacked.
 
         Parameters
@@ -298,7 +298,7 @@ class Board:
 
     def get_fen(self) -> str:
         """Get the fen for the board."""
-        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castling_rights, self.en_passant_coords)
+        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castle_rights, self.en_passant_coords)
         return self.fen
 
     def __str__(self):

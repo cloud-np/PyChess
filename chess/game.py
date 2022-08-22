@@ -3,11 +3,10 @@ from uuid import uuid4
 from uuid import UUID
 from typing import List, Tuple, Optional, Set
 
-from chess.board import Board, BoardUtils, BoardStateList
+from chess.board import Board, BoardUtils, BoardStateList, Fen
 from datetime import datetime
-from chess.pieces.piece import Piece
+from chess.pieces.piece import Piece, CastleSide
 from chess.pieces.pawn import Pawn
-from chess.pieces.king import King, CastleSide
 from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
 
@@ -30,7 +29,6 @@ class Game:
         self.player1 = player1
         self.player2 = player2
         self.board: Board = Board(STARTING_FEN)
-        self.is_white_turn: bool = self.board.color_to_move == Piece.WHITE
         self.running: bool = True
         # self.moves_history:
         self.visuals: bool = visuals
@@ -52,6 +50,8 @@ class Game:
             # if self.is_player_move_valid(start_coords, end_coords):
             if self.is_move_valid(start_coords, end_coords):
                 self.register_move(start_coords, end_coords)
+                # Reveal board state.
+                self.board.correct_format_print()
             else:
                 print("Invalid move.")
 
@@ -84,7 +84,7 @@ class Game:
         if piece_code == Piece.EMPTY:
             return False
 
-        all_possible_coords = Game.get_piece_possible_coords(piece_code, start_coords, self.board.state)
+        all_possible_coords = Game.get_piece_possible_coords(piece_code, start_coords, self.board.state, self.board.castle_rights, self.board.all_pieces, self.board.last_piece_moved)
 
         # Remove the illegal moves
         # all_possible_coords -= self.get_piece_illegal_coords(piece_code, all_possible_coords)
@@ -125,11 +125,11 @@ class Game:
 
     # NOTE: Add en passant.
     @staticmethod
-    def get_piece_possible_coords(piece_code: int, start_coords: Tuple[int, int], board_state: BoardStateList) -> Set[Tuple[int, int]]:
+    def get_piece_possible_coords(piece_code: int, start_coords: Tuple[int, int], board_state: BoardStateList, castle_rights, all_pieces, last_moved_piece) -> Set[Tuple[int, int]]:
         """Get all the possible coords."""
         coords_set = Piece.get_possible_coords((piece_code, start_coords), board_state)
         if Piece.get_type(piece_code) == Piece.KING:
-            if castling_moves := Game.get_castling_coords(piece_code):
+            if castling_moves := Game.get_castling_coords(piece_code, board_state, castle_rights, all_pieces):
                 coords_set = coords_set | castling_moves
         # if isinstance(piece_code, Pawn) and self.board.last_piece_moved is not None:
         #     if en_passant_move := piece_code.get_en_passant_coords(self.board.last_piece_moved, self.board.en_passant_coords):
@@ -138,22 +138,22 @@ class Game:
         return coords_set
 
     @staticmethod
-    def get_castling_coords(piece_code: int, castle_rights, board_state, ) -> Set[Tuple[int, int]]:
+    def get_castling_coords(piece_code: int, board_state, castle_rights, all_pieces) -> Set[Tuple[int, int]]:
         """Try adding the roke moves if they are valid."""
-        castle_coords = {}
+        castle_coords = set()
 
         pcolor = Piece.get_color(piece_code)
-
-        # Left castle
+        enemy_pieces = all_pieces[Piece.get_enemy_color(piece_code)]
+        # Right castle
         if castle_rights[pcolor][1]:
-            lcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code)
-            if not Board.are_coords_under_attack(board_state, lcastle, Piece.get_enemy_color(piece_code)) and Board.are_coords_empty(lcastle):
+            rcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code, Piece.RIGHT_PIECE)
+            if rcastle and not Board.are_coords_under_attack(board_state, rcastle, enemy_pieces) and Board.are_coords_empty(board_state, rcastle):
                 castle_coords.add((7, 6) if pcolor == Piece.WHITE else (0, 6))
 
-        # Right castle
+        # Left castle
         if castle_rights[pcolor][0]:
-            rcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code)
-            if not Board.are_coords_under_attack(board_state, rcastle, Piece.get_enemy_color(piece_code)) and Board.are_coords_empty(rcastle):
+            lcastle: List[Tuple[int, int]] = Piece.get_castle_coords(piece_code, Piece.LEFT_PIECE)
+            if lcastle and not Board.are_coords_under_attack(board_state, lcastle, enemy_pieces) and Board.are_coords_empty(board_state, lcastle):
                 castle_coords.add((7, 2) if pcolor == Piece.WHITE else (0, 2))
         return castle_coords
 
@@ -162,6 +162,10 @@ class Game:
         if len(self.moves_history) > 0:
             return self.board.get_piece(self.board.state[self.get_last_played_move().end_coords])
         return None
+    
+    @staticmethod
+    def get_last_fen(move: Optional[Move]) -> str:
+        return move.fen
 
     def is_last_piece_same_color(self, piece):
         """Whether or not the last piece played is the same color as the given piece."""
@@ -228,14 +232,16 @@ class Game:
     #     sim_state[end_coords] = piece.piece_code
     #     sim_state[start_coords] = Piece.EMPTY
 
+    def is_piece_turn(self, start_coords):
+        return Piece.get_color(self.board.state[start_coords]) == self.board.color_to_move
+
     def is_player_move_valid(self, start_coords: int, end_coords: int) -> bool:
         """Check if the player move is valid."""
-        is_piece_white = self.board.get_piece(start_coords).color == Piece.WHITE
-        if is_piece_white != self.is_white_turn:
-            return False
-        return self.is_move_valid(start_coords, end_coords)
+        if self.is_piece_turn(start_coords):
+            return self.is_move_valid(start_coords, end_coords)
+        return False
 
-    def register_move(self, start_coords: tuple, end_coords: tuple):
+    def register_move(self, start_coords: Tuple[int, int], end_coords: Tuple[int, int]) -> Move:
         """Register the a move.
 
         Find the Piece objs on the given coords and change their attr accordantly.
@@ -246,28 +252,27 @@ class Game:
         end_coords : tuple
             The new coords of the piece.
         """
-        moving_piece: int = self.board.get_piece(start_coords)
-        taken_piece: int = self.board.get_piece(end_coords)
-
         # NOTE Make it possible so the Pawn can transform here.
+        castle_side: Optional[CastleSide]
 
-        castling_info = self.__update_board(start_coords, end_coords, moving_piece, taken_piece)
-        # Reveal board state.
-        if self.visuals is False:
-            self.board.correct_format_print()
-        else:
-            print(self.board)
+        # self last_piece_moved
+        moving_piece, castle_side, en_passant_coords = Game.update_board(self.board.state, self.board.en_passant_coords, start_coords, end_coords)
+        self.board.en_passant_coords = en_passant_coords
+        self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
 
         # Change the turn.
-        self.is_white_turn = self.board.color_to_move == Piece.WHITE
+        # self.is_white_turn = self.board.color_to_move == Piece.WHITE
 
         # Last move new fen is no the new old fen.
-        old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].new_fen
-        move = Move(len(self.moves_history), start_coords, end_coords, castling_info, old_fen, new_fen=self.board.fen)
+        old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].curr_fen
+        # curr_fen = Fen.create_fen(self.board.state, Piece.get_color(moving_piece), self.board.castle_rights)
+        curr_fen = Fen.create_fen(self.board.state, Piece.get_color(moving_piece))
+        move = Move(len(self.moves_history), moving_piece, start_coords, end_coords, castle_side, old_fen, curr_fen)
         self.moves_history.append(move)
         return move
 
-    def __update_board(self, old_coords, new_coords, moving_piece, taken_piece):
+    @staticmethod
+    def update_board(board_state: BoardStateList, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
         """Update the board state and pieces.
 
         Parameters
@@ -286,9 +291,9 @@ class Game:
         Dict[List[int], List[int]]
             If the moving piece is a King and the move was castling, return the castling info.
         """
-        # self.board.try_updating_castling(moving_piece)
+        # board.try_updating_castling(moving_piece)
         # Change the colour that has to move next.
-        self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
+        moving_piece = board_state[old_coords]
 
         # if moving_piece.ptype == Piece.PAWN:
         #     if abs(old_coords[0] - new_coords[0]) > 1:
@@ -301,12 +306,11 @@ class Game:
             # self.board.transform_pawn_to(moving_pawn, piece_code)
 
         # Was the move a castling move?
-        # castling_side = None
-        # castling_info = None
-        # if isinstance(moving_piece, King) and moving_piece.times_moved == 0:
-        #     if castling_side := King.castling_side(new_coords):
-        #         new_rook_coords, rook_coords = self.__update_rooks_castle_pos(castling_side)
-        #         castling_info = {'rook_coords': rook_coords, 'new_rook_coords': new_rook_coords}
+        castle_side = None
+        if Piece.get_type(moving_piece) == Piece.KING:
+            # Try to get the castling side if it returns None then no castling move was made.
+            if castle_side := CastleSide.get_side(new_coords):
+                Game.__update_rook_castle_pos(board_state, castle_side)
 
         # Update pieces
         # moving_piece.set_coords(new_coords)
@@ -317,31 +321,12 @@ class Game:
         #     taken_piece.set_coords((-1, -1))
 
         # Update board state.
-        self.board.state[new_coords] = self.board.state[old_coords]
-        self.board.state[old_coords] = Piece.EMPTY
-        self.board.fen = self.board.get_fen()
-        self.board.last_piece_moved = moving_piece
-        # return castling_info
+        board_state[new_coords] = board_state[old_coords]
+        board_state[old_coords] = Piece.EMPTY
+        return moving_piece, castle_side, None
 
-    def get_castling_rook_positions(self, castling_side: int) -> tuple:
-        """Return the positions of the rooks involved in a castling."""
-        if castling_side == CastleSide.WK_SIDE_R:
-            rook_castle_coords = (7, 5)
-            rook_coords = (7, 7)
-        elif castling_side == CastleSide.WK_SIDE_L:
-            rook_castle_coords = (7, 3)
-            rook_coords = (7, 0)
-        elif castling_side == CastleSide.BK_SIDE_R:
-            rook_castle_coords = (0, 5)
-            rook_coords = (0, 7)
-        elif castling_side == CastleSide.BK_SIDE_L:
-            rook_castle_coords = (0, 3)
-            rook_coords = (0, 0)
-        else:
-            raise ValueError("Invalid castling side.")
-        return rook_castle_coords, rook_coords
-
-    def __update_rooks_castle_pos(self, castling_side: int):
+    @staticmethod
+    def __update_rook_castle_pos(board_state: BoardStateList, castle_side: int) -> None:
         """Update the rook's position based on the castling side.
 
         Parameters
@@ -349,18 +334,15 @@ class Game:
         castling_side : int
             Change the board state based on the castling side.
         """
-        new_rook_coords, rook_coords = self.get_castling_rook_positions(castling_side)
+        new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
         # Change the coords of the rook and the board state.
-        self.board.get_piece(rook_coords).set_coords(new_rook_coords)
-        self.board.state[new_rook_coords] = self.board.state[rook_coords]
-        self.board.state[rook_coords] = Piece.EMPTY
-        return new_rook_coords, rook_coords
+        board_state[new_rook_coords] = board_state[rook_coords]
+        board_state[rook_coords] = Piece.EMPTY
 
-    def is_piece_pickable(self, piece) -> bool:
+    def is_piece_pickable(self, piece_code: int) -> bool:
         """Determine if you can pick a piece.
 
         If the piece is on the same colour as the player
         who is turn to play then the pick is pickable.
         """
-        # return isinstance(piece, Piece) and piece.is_white == self.is_white_turn
-        return True
+        return Piece.get_color(piece_code) == self.board.color_to_move

@@ -115,19 +115,22 @@ class Move:
     def __init__(
         self,
         move_num: int,
+        moving_piece: int,
         start_coords: Tuple[int, int],
         end_coords: Tuple[int, int],
-        castling_info: Dict[int, int],
+        castle_side,
         old_fen: str,
-        new_fen: str
+        curr_fen: str,
     ):
         """Components to indentify a move."""
         self.move_num: int = move_num
+        self.moving_piece: int = moving_piece
         self.start_coords: Tuple[int, int] = start_coords
         self.end_coords: Tuple[int, int] = end_coords
-        self.castling_info: Dict[int, int] = castling_info
+        self.castle_side = castle_side
         self.old_fen: str = old_fen
-        self.new_fen: str = new_fen
+        self.curr_fen: str = curr_fen 
+    
 
     @staticmethod
     def get_direction_func(direction: MoveDirection):

@@ -10,8 +10,8 @@ class Fen:
     @staticmethod
     def create_fen(
         board_state,
-        colour_to_move: Literal[Piece.WHITE, Piece.BLACK],
-        caslting: Optional[Dict[List[bool], List[bool]]] = None,
+        color_to_move: Literal[Piece.WHITE, Piece.BLACK],
+        caslting_rights: Optional[Dict[List[bool], List[bool]]] = None,
         en_passant: Optional[List[int]] = None,
         halfmove_clock: int = 0,
         fullmove_number: int = 1,
@@ -20,8 +20,8 @@ class Fen:
         board_state_f: str = Fen.__get_board_state_fen(board_state)
         # Remove the symbol '/'
         # fen = fen[:-1] + " " + self.get_castling_fen() + " " + self.get_en_passant_fen() + " " + str(self.half_move_clock) + " " + str(self.full_move_number)
-        colour_f: str = " w " if colour_to_move == Piece.WHITE else " b "
-        cast_f: str = Fen.__get_castling_fen(caslting) if caslting is not None else "-"
+        colour_f: str = " w " if color_to_move == Piece.WHITE else " b "
+        cast_f: str = Fen.__get_castling_fen(caslting_rights) if caslting_rights is not None else "-"
         en_passant_fen: str = Fen.__get_en_passant_fen(en_passant)
         return board_state_f + colour_f + cast_f + " " + en_passant_fen
 
@@ -29,17 +29,23 @@ class Fen:
     def __get_en_passant_fen(en_passant: Optional[List[int]]) -> str:
         """Get the en passant fen."""
         return "-" if en_passant is None else BoardUtils.get_col_for_number(en_passant[1]) + str(8 - en_passant[0])
+    
+    @staticmethod
+    def get_color_to_move(fen: str) -> str:
+        """Get the en passant fen."""
+        _, colour_to_move_fen, rest_of_fen = fen.split()
+        return Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
 
     @staticmethod
-    def __get_castling_fen(castling_rights: Dict[List[bool], List[bool]]) -> str:
-        castling_fen: str = ""
+    def __get_castling_fen(castle_rights: Dict[List[bool], List[bool]]) -> str:
+        castle_fen: str = ""
         # Get white and black castling sides
-        ws, bs = castling_rights.values()
-        castling_fen += "K" if ws[1] else ""
-        castling_fen += "Q" if ws[0] else ""
-        castling_fen += "k" if bs[1] else ""
-        castling_fen += "q" if bs[0] else ""
-        return castling_fen if castling_fen != "" else "-"
+        ws, bs = castle_rights.values()
+        castle_fen += "K" if ws[1] else ""
+        castle_fen += "Q" if ws[0] else ""
+        castle_fen += "k" if bs[1] else ""
+        castle_fen += "q" if bs[0] else ""
+        return castle_fen if castle_fen != "" else "-"
 
     @staticmethod
     def __get_board_state_fen(board_state) -> str:

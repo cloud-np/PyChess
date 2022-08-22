@@ -3,15 +3,6 @@ from chess.pieces.piece import Piece
 from chess.move import MoveDirection
 
 
-class CastleSide:
-    """Represents a side of a castle."""
-
-    WK_SIDE_L = 0
-    WK_SIDE_R = 1
-    BK_SIDE_L = 2
-    BK_SIDE_R = 3
-
-
 class King(Piece):
     """Has specific functions tied to a King obj.
 
@@ -54,18 +45,6 @@ class King(Piece):
             possible_castle_coords.add((7, 2) if self.color == Piece.WHITE else (0, 2))
         return possible_castle_coords
 
-    @staticmethod
-    def castling_side(end_coords) -> CastleSide:
-        """Return the side of the castle.
-
-        We use .get() to avoid KeyErrors.
-        """
-        return {
-            (7, 6): CastleSide.WK_SIDE_R,
-            (7, 2): CastleSide.WK_SIDE_L,
-            (0, 6): CastleSide.BK_SIDE_R,
-            (0, 2): CastleSide.BK_SIDE_L
-        }.get(end_coords)
 
     def in_check(self, enemies_pieces, board_state):
         """Check if the king is in check."""

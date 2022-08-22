@@ -1,11 +1,12 @@
 """Creates the visuals for the game."""
 import pygame as py_g
-from typing import List
+from typing import List, Tuple
+from chess.move import Move
 from colorama import Fore
 from chess.board.board import BoardStateList
 from itertools import chain
 from chess.ai.move_picker import random_legal_move
-from chess.pieces.piece import Piece
+from chess.pieces.piece import Piece, CastleSide
 
 
 IMGS_PATH = "chess/frontend/assets/images"
@@ -190,13 +191,14 @@ class GameVisuals:
         while self.is_running:
             # NOTE: Make it a more dynamic so the player and PC have different colours.
             # Check if its the PC's turn
-            if not self.game.is_white_turn and self.game.player2 == 'PC':
+            if self.game.player2 == 'PC':
                 move_coords = random_legal_move(game=self.game)
                 if move_coords is None:
                     print("GG no legal moves")
                 else:
                     move = self.game.register_move(*move_coords)
                     self.update_visuals_based_on_move(move)
+                    print(self.game.board)
 
             # Keep tracking the position of the mouse
             mx, my = py_g.mouse.get_pos()
@@ -241,8 +243,8 @@ class GameVisuals:
     def update_visuals_based_on_move(self, move):
         """Update the visuals based on the move that got played."""
         # Update Game state
-        if move.castling_info is not None:
-            self.place_castling_rook(move.castling_info)
+        if move.castling_side is not None:
+            self.place_castling_rook(move.castling_side)
         s_tile = self.tiles[move.start_coords[0]][move.start_coords[1]]
         e_tile = self.tiles[move.end_coords[0]][move.end_coords[1]]
         e_tile.piece_img = s_tile.piece_img
@@ -262,30 +264,31 @@ class GameVisuals:
         bool
             Where or not it was able to place the picked piece.
         """
-        _, coords = self.tile_clicked(m_pos)
+        _, clicked_coords = self.tile_clicked(m_pos)
 
         # If this happens place the piece back.
-        if self.picked_piece["coords"] == coords:
+        if self.picked_piece["coords"] == clicked_coords:
             if self.picked_piece['img'] is not None:
                 self.place_picked_piece_back()
             return True
-        elif self.game.is_player_move_valid(self.picked_piece["coords"], coords):
-            move = self.game.register_move(self.picked_piece["coords"], coords)
-            did_update = self.update_visuals_based_on_picked_piece(move, coords)
+        elif self.game.is_player_move_valid(self.picked_piece["coords"], clicked_coords):
+            move = self.game.register_move( self.picked_piece["coords"], clicked_coords)
+            self.game.moves_history.append(move)
+            did_update = self.update_visuals_based_on_picked_piece(move, clicked_coords)
             return did_update
         return False
 
-    def update_visuals_based_on_picked_piece(self, move, coords):
+    def update_visuals_based_on_picked_piece(self, move: Move, coords: Tuple[int, int]) -> bool:
         """Play a legal move and update the visuals corrispodently."""
         # Update Game state
-        if move.castling_info is not None:
-            self.place_castling_rook(move.castling_info)
+        if move.castle_side is not None:
+            self.place_castling_rook(move.castle_side)
         # Update visuals
         self.swap_picked_piece(coords)
         self.change_cursor("arrow")
         return True
 
-    def place_castling_rook(self, castling_info: dict):
+    def place_castling_rook(self, castle_side: CastleSide):
         """Place the rook on the screen from the given positions.
 
         Parameters
@@ -293,10 +296,9 @@ class GameVisuals:
         castling_info : dict
             This includes the info of where the rook will be placed and were it used to be.
         """
-        rook_tile = self.tiles[castling_info["rook_coords"]
-                               [0]][castling_info["rook_coords"][1]]
-        new_rook_tile = self.tiles[castling_info["new_rook_coords"]
-                                   [0]][castling_info["new_rook_coords"][1]]
+        new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
+        rook_tile = self.tiles[rook_coords[0]][rook_coords[0]]
+        new_rook_tile = self.tiles[new_rook_coords[0]][new_rook_coords[1]]
         new_rook_tile.piece_img = rook_tile.piece_img
         rook_tile.piece_img = None
 
@@ -341,7 +343,7 @@ class GameVisuals:
         if self.picked_piece["coords"] == coords:
             return True
         # If the Piece the user is trying to pick is not its turn to play he/she simply can't pick it.
-        elif Piece.get_color(self.game.board.state[coords]) != self.game.board.colour_to_move:
+        elif not self.game.is_piece_turn(coords):
             return False
         elif self.tiles[coords[0]][coords[1]].piece_img is not None and self.game.is_piece_pickable(piece):
 
@@ -392,11 +394,11 @@ class GameVisuals:
             The index and piece that occupies the tile.
         """
         row, col = (m_pos[1] // 100), (m_pos[0] // 100)
-        piece = self.game.board.state[row, col]
+        piece_code: int = self.game.board.state[row, col]
 
         if self.game.debug:
             print(m_pos, f"tile: [ {row}, {col} ]")
-        return piece, (row, col)
+        return piece_code, (row, col)
 
     @staticmethod
     def check_for_events():

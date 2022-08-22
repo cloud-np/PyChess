@@ -1,6 +1,7 @@
 """A module for tools related to board utils."""
 from chess.pieces.piece import Piece
-from typing import Literal
+from typing import Literal, Optional
+import chess.board as board 
 
 
 class BoardUtils:
@@ -18,6 +19,12 @@ class BoardUtils:
         _col: int = BoardUtils.get_number_for_col(col)
         _row: int = 8 - int(row)
         return (_row * 8) + _col
+    
+    @staticmethod
+    def get_color_to_move(last_piece_moved: Optional[int], fen: str) -> int:
+        if not last_piece_moved:
+            return board.Fen.get_color_to_move(fen)
+        return Piece.WHITE if Piece.color(last_piece_moved) == Piece.BLACK else Piece.BLACK
 
     @staticmethod
     def get_col_for_number(number: int) -> str:
