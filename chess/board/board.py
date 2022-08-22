@@ -76,27 +76,23 @@ class Board:
         self.dead_pieces: List[int] = []
         self.correct_format_print()
 
-    def try_updating_castling(self, moving_piece):
+    @staticmethod
+    def try_update_castle_rights(castle_rights, moving_piece: int) -> None:
         """Remove castling privileges depending the moving piece."""
         # Only for the first time the King is moving.
         pcolor = Piece.get_color(moving_piece)
-        if Piece.get_type(moving_piece) == Piece.KING:
-            self.castle_rights[pcolor] = [False, False]
+        ptype = Piece.get_type(moving_piece)
+        if ptype == Piece.KING:
+            castle_rights[pcolor] = [False, False]
 
         if Piece.get_type(moving_piece) == Piece.ROOK:
             # Check if the rook moved was in the Right half of the board.
-            if Piece.get_the_specific_piece(moving_piece) == Piece.RIGHT_PIECE in (
-                RookCorner.BOTTOM_RIGHT,
-                RookCorner.TOP_RIGHT,
-            ):
-                self.castle_rights[pcolor][1] = False
+            if Piece.get_the_specific_piece(moving_piece) == Piece.RIGHT_PIECE:
+                castle_rights[pcolor][1] = False
 
             # Check if the rook moved was in the Left half of the board.
-            if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE in (
-                RookCorner.BOTTOM_LEFT,
-                RookCorner.TOP_LEFT,
-            ):
-                self.castle_rights[pcolor][0] = False
+            if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE:
+                castle_rights[pcolor][0] = False
 
     def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
         """Transform to a desired Piece.

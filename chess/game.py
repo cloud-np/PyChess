@@ -255,8 +255,7 @@ class Game:
         # NOTE Make it possible so the Pawn can transform here.
         castle_side: Optional[CastleSide]
 
-        # self last_piece_moved
-        moving_piece, castle_side, en_passant_coords = Game.update_board(self.board.state, self.board.en_passant_coords, start_coords, end_coords)
+        moving_piece, castle_side, en_passant_coords = Game.update_board(self.board.state, self.board.castle_rights, self.board.en_passant_coords, start_coords, end_coords)
         self.board.en_passant_coords = en_passant_coords
         self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
 
@@ -266,13 +265,13 @@ class Game:
         # Last move new fen is no the new old fen.
         old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].curr_fen
         # curr_fen = Fen.create_fen(self.board.state, Piece.get_color(moving_piece), self.board.castle_rights)
-        curr_fen = Fen.create_fen(self.board.state, Piece.get_color(moving_piece))
+        curr_fen = Fen.create_fen(self.board.state, Piece.get_color(moving_piece), self.board.castle_rights)
         move = Move(len(self.moves_history), moving_piece, start_coords, end_coords, castle_side, old_fen, curr_fen)
         self.moves_history.append(move)
         return move
 
     @staticmethod
-    def update_board(board_state: BoardStateList, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
+    def update_board(board_state: BoardStateList, castle_rights, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
         """Update the board state and pieces.
 
         Parameters
@@ -294,6 +293,7 @@ class Game:
         # board.try_updating_castling(moving_piece)
         # Change the colour that has to move next.
         moving_piece = board_state[old_coords]
+        Board.try_update_castle_rights(castle_rights, moving_piece)
 
         # if moving_piece.ptype == Piece.PAWN:
         #     if abs(old_coords[0] - new_coords[0]) > 1:

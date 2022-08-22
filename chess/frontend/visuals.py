@@ -273,6 +273,7 @@ class GameVisuals:
             return True
         elif self.game.is_player_move_valid(self.picked_piece["coords"], clicked_coords):
             move = self.game.register_move( self.picked_piece["coords"], clicked_coords)
+            print(self.game.board)
             self.game.moves_history.append(move)
             did_update = self.update_visuals_based_on_picked_piece(move, clicked_coords)
             return did_update
