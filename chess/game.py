@@ -6,15 +6,17 @@ from typing import List, Tuple, Optional, Set
 from chess.board import Board, BoardUtils, BoardStateList, Fen
 from datetime import datetime
 from chess.pieces.piece import Piece, CastleSide
-from chess.pieces.pawn import Pawn
 from chess.move import Move, MoveDecoder
 from chess.frontend.visuals import GameVisuals
 
 
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-PROM_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - 0 1"
+# PROM_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - 0 1"
 STARTING_FEN = "rnbqk2r/ppp2ppp/3bpn2/3p4/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq - 0 1"
-# STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b"
+# Castling
+# STARTING_FEN = "r3k2r/pppbqppp/n2bpn2/3p4/3P4/2NBPN2/PPPBQPPP/R3K2R w KQkq - 0 1"
+# STARTING_FEN = "r1b1k2r/ppp2ppp/nb1qpn2/2Qp4/3P4/3BPN2/PPP2PPP/RNB1R1K1 b kq - 0 1"
+STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b - - 0 1"
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 
@@ -84,10 +86,10 @@ class Game:
         if piece_code == Piece.EMPTY:
             return False
 
-        all_possible_coords = Game.get_piece_possible_coords(piece_code, start_coords, self.board.state, self.board.castle_rights, self.board.all_pieces, self.board.last_piece_moved)
+        all_possible_coords = Game.get_piece_possible_coords(self.board.state, self.board.all_pieces, self.board.castle_rights, self.board.en_passant, piece_code, start_coords)
 
         # Remove the illegal moves
-        all_possible_coords -= self.get_piece_illegal_coords(piece_code, all_possible_coords)
+        all_possible_coords -= Game.get_piece_illegal_coords(self.board.state, self.board.all_pieces, self.board.en_passant, start_coords, piece_code, all_possible_coords)
 
         # print("Is white king in check: ", self.board.kings[0].in_check(self.board.b_pieces, self.board.state))
         # moves = Piece.get_moveset(start_tile, piece_code)
@@ -125,9 +127,9 @@ class Game:
 
     # NOTE: Add en passant.
     @staticmethod
-    def get_piece_possible_coords(piece_code: int, start_coords: Tuple[int, int], board_state: BoardStateList, castle_rights, all_pieces, last_moved_piece) -> Set[Tuple[int, int]]:
+    def get_piece_possible_coords(board_state: BoardStateList, all_pieces, castle_rights, en_passant, piece_code: int, start_coords: Tuple[int, int]) -> Set[Tuple[int, int]]:
         """Get all the possible coords."""
-        coords_set = Piece.get_possible_coords((piece_code, start_coords), board_state)
+        coords_set = Piece.get_possible_coords(board_state, (piece_code, start_coords), en_passant)
         if Piece.get_type(piece_code) == Piece.KING:
             if castling_moves := Game.get_castling_coords(piece_code, board_state, castle_rights, all_pieces):
                 coords_set = coords_set | castling_moves
@@ -162,7 +164,7 @@ class Game:
         if len(self.moves_history) > 0:
             return self.board.get_piece(self.board.state[self.get_last_played_move().end_coords])
         return None
-    
+
     @staticmethod
     def get_last_fen(move: Optional[Move]) -> str:
         return move.fen
@@ -172,7 +174,7 @@ class Game:
         return self.get_last_piece_moved().color == piece.color
 
     @staticmethod
-    def get_piece_illegal_coords(board_state: BoardStateList, all_pieces, piece_code: int, coords_set) -> set:
+    def get_piece_illegal_coords(board_state: BoardStateList, all_pieces, en_passant: Tuple[int, int], start_coords: Tuple[int, int], piece_code: int, coords_set) -> set:
         """Get the illegal coords.
 
         Parameters
@@ -192,17 +194,15 @@ class Game:
         # For each simulated move, if the king is in check, then the move is invalid.
         sim_state = Board.simulate_board_state(board_state)
         illegal_coords = set()
-        king = all_pieces[Piece.get_color(piece_code) | Piece.KING][0]
-        enemy_pieces = all_pieces[Piece.get_enemy_color(piece_code)]
 
         @Game.simulate_move
-        def __play_possibly_illegal_move(sim_state, start_coords, end_coords, piece):
-            is_king_in_check = king.in_check(enemy_pieces, sim_state)
+        def __play_possibly_illegal_move(sim_state, all_pieces, start_coords, end_coords):
+            is_king_in_check = Piece.is_king_in_check(sim_state, all_pieces, en_passant, piece_code)
             if is_king_in_check:
                 illegal_coords.add(end_coords)
 
-        for crd in coords_set:
-            __play_possibly_illegal_move(sim_state, start_coords=piece.coords, end_coords=crd, piece=piece)
+        for c in coords_set:
+            __play_possibly_illegal_move(sim_state, all_pieces, start_coords, c)
         return illegal_coords
 
     @staticmethod
@@ -216,16 +216,17 @@ class Game:
         func : function
             The function that should changes a board state.
         """
-        def __sim_seq(sim_state, start_coords, end_coords, piece):
-            piece.set_coords(end_coords)
-            sim_state[end_coords] = piece.piece_code
-            sim_state[start_coords] = Piece.EMPTY
+        def __sim_seq(state, all_pieces, piece_code, start_coords, end_coords):
+            all_pieces[Piece.get_color(piece_code)][Piece.get_type(piece_code)][piece_code] = end_coords
+            state[end_coords] = piece_code
+            state[start_coords] = Piece.EMPTY
 
-        def __simulate_move(sim_state, start_coords: tuple, end_coords: tuple, piece: Piece) -> None:
-            __sim_seq(sim_state, piece=piece, start_coords=start_coords, end_coords=end_coords)
-            func(sim_state, start_coords, end_coords, piece)
+        def __simulate_move(state, all_pieces, start_coords: tuple, end_coords: tuple) -> None:
+            piece_code = state[start_coords]
+            __sim_seq(state, all_pieces, piece_code, start_coords=start_coords, end_coords=end_coords)
+            func(state, all_pieces, start_coords, end_coords)
             # Simpliest thing to do simulate back what you simulated above.
-            __sim_seq(sim_state, piece=piece, end_coords=start_coords, start_coords=end_coords)
+            __sim_seq(state, all_pieces, piece_code, end_coords=start_coords, start_coords=end_coords)
         return __simulate_move
 
     # def simulate_move(self, sim_state, start_coords: int, end_coords: int, piece: Piece) -> None:
@@ -256,8 +257,8 @@ class Game:
         # NOTE Make it possible so the Pawn can transform here.
         castle_side: Optional[CastleSide]
 
-        moving_piece, castle_side, en_passant_coords = Game.update_board(self.board.state, self.board.castle_rights, self.board.en_passant_coords, start_coords, end_coords)
-        self.board.en_passant_coords = en_passant_coords
+        moving_piece, castle_side, en_passant = Game.update_board(self.board.state, self.board.all_pieces, self.board.castle_rights, self.board.en_passant, start_coords, end_coords)
+        self.board.en_passant = en_passant
         self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
 
         # Change the turn.
@@ -272,7 +273,7 @@ class Game:
         return move
 
     @staticmethod
-    def update_board(board_state: BoardStateList, castle_rights, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
+    def update_board(board_state: BoardStateList, all_pieces, castle_rights, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
         """Update the board state and pieces.
 
         Parameters
@@ -296,21 +297,24 @@ class Game:
         moving_piece = board_state[old_coords]
         Board.try_update_castle_rights(castle_rights, moving_piece)
 
-        # if moving_piece.ptype == Piece.PAWN:
-        #     if abs(old_coords[0] - new_coords[0]) > 1:
-        #         row_skipped = new_coords[0] + (1 if moving_piece.color == Piece.WHITE else -1)
-        #         self.board.en_passant_coords = (row_skipped, new_coords[1])
-        #     else:
-        #         self.board.en_passant_coords = None
-        #     if moving_piece.is_transforming():
-        #         ...
-            # self.board.transform_pawn_to(moving_pawn, piece_code)
+        if Piece.get_type(moving_piece) == Piece.PAWN:
+            # Piece.pawn_attack_moves(board_state, (moving_piece, old_coords))
+            if abs(old_coords[0] - new_coords[0]) > 1:
+                row_skipped = new_coords[0] + (1 if Piece.get_color(moving_piece) == Piece.WHITE else -1)
+                en_passant_coords = (row_skipped, new_coords[1])
+            else:
+                en_passant_coords = None
+            # if moving_piece.is_transforming():
+            #     ...
+        # self.board.transform_pawn_to(moving_pawn, piece_code)
 
         # Was the move a castling move?
         castle_side = None
-        if Piece.get_type(moving_piece) == Piece.KING:
+        ptype = Piece.get_type(moving_piece)
+        if ptype == Piece.KING:
             # Try to get the castling side if it returns None then no castling move was made.
-            if castle_side := CastleSide.get_side(new_coords):
+            castle_side = CastleSide.get_side(new_coords)
+            if castle_side is not None:
                 Game.__update_rook_castle_pos(board_state, castle_side)
 
         # Update pieces
@@ -324,7 +328,9 @@ class Game:
         # Update board state.
         board_state[new_coords] = board_state[old_coords]
         board_state[old_coords] = Piece.EMPTY
-        return moving_piece, castle_side, None
+        # Update piece_lists
+        all_pieces[Piece.get_color(moving_piece)][ptype][moving_piece] = new_coords
+        return moving_piece, castle_side, en_passant_coords
 
     @staticmethod
     def __update_rook_castle_pos(board_state: BoardStateList, castle_side: int) -> None:

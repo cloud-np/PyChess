@@ -29,7 +29,7 @@ class Fen:
     def __get_en_passant_fen(en_passant: Optional[List[int]]) -> str:
         """Get the en passant fen."""
         return "-" if en_passant is None else BoardUtils.get_col_for_number(en_passant[1]) + str(8 - en_passant[0])
-    
+
     @staticmethod
     def get_color_to_move(fen: str) -> str:
         """Get the en passant fen."""
@@ -38,10 +38,8 @@ class Fen:
 
     @staticmethod
     def __get_castling_fen(castle_rights: Dict[List[bool], List[bool]]) -> str:
-        castle_fen: str = ""
-        # Get white and black castling sides
         ws, bs = castle_rights.values()
-        castle_fen += "K" if ws[1] else ""
+        castle_fen: str = "" + ("K" if ws[1] else "")
         castle_fen += "Q" if ws[0] else ""
         castle_fen += "k" if bs[1] else ""
         castle_fen += "q" if bs[0] else ""

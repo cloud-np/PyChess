@@ -2,7 +2,6 @@
 from typing import Dict, List, Tuple, Literal, Union, Optional
 from .board_utils import BoardUtils
 from .fen import Fen
-from chess.pieces.rook import RookCorner
 from chess.pieces.piece import Piece
 
 BOARD_OFFSET = 21
@@ -50,22 +49,22 @@ class Board:
 
         self.color_to_move: Literal[Piece.WHITE, Piece.BLACK]
         self.castle_rights: Dict[Tuple[int, int], Tuple[int, int]]
-        self.en_passant_coords: Union[Tuple[int, int], str]
+        self.en_passant: Union[Tuple[int, int], str]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,
             self.color_to_move,
             self.castle_rights,
-            self.en_passant_coords,
+            self.en_passant,
         ) = Fen.translate_to_state(fen)
 
-        self.state, pieces = self.setup_board_state_and_pieces(pcs_and_coords)
+        self.state, self.all_pieces = Board.setup_board_state_and_pieces(pcs_and_coords)
 
         # Get White Lists
-        w_pieces = Board.organize_pieces(pieces, is_whites=True)
-        # Get Black Lists
-        b_pieces = Board.organize_pieces(pieces, is_whites=False)
-        self.all_pieces = {Piece.WHITE: w_pieces, Piece.BLACK: b_pieces}
+        # w_pieces = Board.organize_pieces(pieces, is_whites=True)
+        # # Get Black Lists
+        # b_pieces = Board.organize_pieces(pieces, is_whites=False)
+        # self.all_pieces = {Piece.WHITE: w_pieces, Piece.BLACK: b_pieces}
 
         # Kings
         # self.kings = {
@@ -140,7 +139,7 @@ class Board:
         This will allows us to affect the board state without actually changing it.
         """
         # Slower but more compact
-        return BoardStateList([[baord_state[j, i] for i in range(8)] for j in range(8)])
+        return BoardStateList([[board_state[j, i] for i in range(8)] for j in range(8)])
 
     @staticmethod
     def get_piece(board_state, coords: Tuple[int, int]) -> int:
@@ -173,36 +172,41 @@ class Board:
                 return p_info[1]
 
     @staticmethod
-    def organize_pieces(all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
-        """Given a team color it will return that team's pieces.
+    def set_coordsl_to_piece(all_pieces, coords: Tuple[int, int], piece_code: int) -> None:
+        """Set the coords to a piece."""
+        all_pieces[Piece.get_color(piece_code)][Piece.get_type(piece_code)][piece_code] = coords
 
-        Parameters
-        ----------
-        is_whites : bool
-            Whether or not white pieces were asked to be returned.
+    # @staticmethod
+    # def organize_pieces(all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
+    #     """Given a team color it will return that team's pieces.
 
-        Returns
-        -------
-        Dict[int, List[int]]
-            A map of the existing (white or black) pieces
-            separated in lists based on their type.
-        """
-        color_given = Piece.WHITE if is_whites else Piece.BLACK
-        pieces: Dict[int, List[int]] = {
-            Piece.KING | color_given: [],
-            Piece.PAWN | color_given: [],
-            Piece.BISHOP | color_given: [],
-            Piece.KNIGHT | color_given: [],
-            Piece.ROOK | color_given: [],
-            Piece.QUEEN | color_given: [],
-        }
+    #     Parameters
+    #     ----------
+    #     is_whites : bool
+    #         Whether or not white pieces were asked to be returned.
 
-        for pc, coords in all_pieces:
-            color = Piece.get_color(pc)
-            ptype = Piece.get_type(pc)
-            if color == color_given:
-                pieces[ptype | color].append((pc, coords))
-        return pieces
+    #     Returns
+    #     -------
+    #     Dict[int, List[int]]
+    #         A map of the existing (white or black) pieces
+    #         separated in lists based on their type.
+    #     """
+    #     color_given = Piece.WHITE if is_whites else Piece.BLACK
+    #     pieces: Dict[Dict[Tuple[int, int]]] = {
+    #         Piece.KING: {},
+    #         Piece.PAWN: {},
+    #         Piece.BISHOP: {},
+    #         Piece.KNIGHT: {},
+    #         Piece.ROOK: {},
+    #         Piece.QUEEN: {},
+    #     }
+
+    #     for pc, coords in all_pieces:
+    #         color = Piece.get_color(pc)
+    #         ptype = Piece.get_type(pc)
+    #         if color == color_given:
+    #             pieces[ptype][pc] = coords
+    #     return pieces
 
     @staticmethod
     def piece_classes(piece_code: int) -> dict:
@@ -223,7 +227,8 @@ class Board:
             Piece.QUEEN: Piece.queen_moves,
         }[ptype]
 
-    def setup_board_state_and_pieces(self, pc_and_coords: Tuple[int, Tuple[int, int]]) -> Tuple[BoardStateList, List[Piece]]:
+    @staticmethod
+    def setup_board_state_and_pieces(pc_and_coords: Tuple[int, Tuple[int, int]]) -> Tuple[BoardStateList, List[Piece]]:
         """Do the setup for the state of the board.
 
         Returns
@@ -238,11 +243,23 @@ class Board:
             A list with all the Pieces objects that were created.
         """
         state = BoardStateList([[Piece.EMPTY for _ in range(8)] for _ in range(8)])
-        pieces: List[Piece] = []
+        all_pieces: Dict[Dict[Tuple[int, int]]] = {
+            Piece.WHITE: {
+                Piece.KING: {}, Piece.PAWN: {}, Piece.BISHOP: {},
+                Piece.KNIGHT: {}, Piece.ROOK: {}, Piece.QUEEN: {}
+            },
+            Piece.BLACK: {
+                Piece.KING: {}, Piece.PAWN: {}, Piece.BISHOP: {},
+                Piece.KNIGHT: {}, Piece.ROOK: {}, Piece.QUEEN: {}
+            }
+        }
+
         for pc, coords in pc_and_coords:
             state[coords] = pc
-            pieces.append((pc, coords))
-        return state, pieces
+            pcolor = Piece.get_color(pc)
+            ptype = Piece.get_type(pc)
+            all_pieces[pcolor][ptype][pc] = coords
+        return state, all_pieces
 
     @staticmethod
     def are_coords_under_attack(board_state: BoardStateList, coords_list: List[Tuple[int, int]], enemy_pieces) -> bool:
@@ -295,7 +312,7 @@ class Board:
 
     def get_fen(self) -> str:
         """Get the fen for the board."""
-        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castle_rights, self.en_passant_coords)
+        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castle_rights, self.en_passant)
         return self.fen
 
     def __str__(self):

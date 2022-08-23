@@ -272,7 +272,7 @@ class GameVisuals:
                 self.place_picked_piece_back()
             return True
         elif self.game.is_player_move_valid(self.picked_piece["coords"], clicked_coords):
-            move = self.game.register_move( self.picked_piece["coords"], clicked_coords)
+            move = self.game.register_move(self.picked_piece["coords"], clicked_coords)
             print(self.game.board)
             self.game.moves_history.append(move)
             did_update = self.update_visuals_based_on_picked_piece(move, clicked_coords)
@@ -298,7 +298,7 @@ class GameVisuals:
             This includes the info of where the rook will be placed and were it used to be.
         """
         new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
-        rook_tile = self.tiles[rook_coords[0]][rook_coords[0]]
+        rook_tile = self.tiles[rook_coords[0]][rook_coords[1]]
         new_rook_tile = self.tiles[new_rook_coords[0]][new_rook_coords[1]]
         new_rook_tile.piece_img = rook_tile.piece_img
         rook_tile.piece_img = None

@@ -1,6 +1,7 @@
 """Includes the base class for each Piece."""
 from chess.move import MoveDirection, Move
-from typing import Tuple, Set, Optional, List
+from typing import Tuple, Set, Optional, List, Dict, Callable
+
 
 class CastleSide:
     """Represents a side of a castle."""
@@ -40,6 +41,7 @@ class CastleSide:
         else:
             raise ValueError("Invalid castling side.")
 
+
 class Piece:
     """Base class that holds info about the piece."""
 
@@ -75,6 +77,9 @@ class Piece:
     WK_L_CASTLE = [(7, 3), (7, 2), (7, 1)]
     BK_L_CASTLE = [(0, 3), (0, 2), (0, 1)]
 
+    WHITE_KING = WHITE | KING
+    BLACK_KING = BLACK | KING
+
     @staticmethod
     def get_the_specific_piece(piece_code: int) -> int:
         """Return which specific piece is this."""
@@ -90,26 +95,30 @@ class Piece:
         )
 
     @staticmethod
-    def is_king_in_check(enemies_pieces, board_state, our_king_coords: Tuple[int, int]) -> bool:
+    def is_king_in_check(board_state, all_pieces, en_passant, piece_code) -> bool:
         """Check if the king is in check."""
         # Check if the king is in check from the rest of the pieces
-        enemy_possible_coords = set()
-        enemy_color = Piece.get_enemy_color(our_king_coords)
-        for piece_code, enemy_list in enemies_pieces.items():
+        # enemy_possible_coords = set()
+        pcolor = Piece.get_color(piece_code)
+        enemy_color = Piece.get_enemy_color(piece_code)
+        enemy_pieces = all_pieces[enemy_color]
+        king_coords = all_pieces[pcolor][Piece.KING][pcolor | Piece.KING]
+
+        for piece_code, enemy_list in enemy_pieces.items():
             if piece_code == Piece.PAWN | enemy_color:
                 continue
 
             # NOTE: Keep track of the attacking direction of the enemy piece.
-            #       THERE MAY BE 2 DIRECTIONS OF ATTACKING.
-            for en, en_coords in enemy_list:
-                if our_king_coords in Piece.get_possible_coords((en, en_coords), board_state):
+            #       THERE MAY BE MUTLIPLE DIRECTIONS OF ATTACKS.
+            for en, en_coords in enemy_list.items():
+                if king_coords in Piece.get_possible_coords(board_state, (en, en_coords), en_passant):
                     return True
 
-        # Check if the king is in check from pawns
-        for en_pawn in enemies_pieces[Piece.PAWN | enemy_color]:
-            enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(board_state)
-            if self.coords in enemy_possible_coords:
-                return True
+        # # Check if the king is in check from pawns
+        # for en_pawn in enemies_pieces[Piece.PAWN | enemy_color]:
+        #     enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(board_state)
+        #     if self.coords in enemy_possible_coords:
+        #         return True
 
         return False
 
@@ -207,50 +216,54 @@ class Piece:
         return moves
 
     @staticmethod
-    def pawn_attack_moves(board_state, coords_set: Optional[Set[Tuple[int, int]]] = None):
+    def pawn_attack_moves(board_state, piece_info: Dict[int, Tuple[int, int]], en_passant: Optional[Tuple[int, int]]) -> Set[Tuple[int, int]]:
         """Get the attackable coords for the pawn."""
-        if coords_set is None:
-            coords_set = set()
+        moves: Set[Tuple[int, int]] = set()
+        pcolor: int = Piece.get_color(piece_info[0])
+        coords: Tuple[int, int] = piece_info[1]
 
-        if self.color == Piece.WHITE:
-            l_coords = self.coords[0] - 1, self.coords[1] - 1
-            r_coords = self.coords[0] - 1, self.coords[1] + 1
+        if pcolor == Piece.WHITE:
+            l_coords = coords[0] - 1, coords[1] - 1
+            r_coords = coords[0] - 1, coords[1] + 1
         else:
-            l_coords = self.coords[0] + 1, self.coords[1] - 1
-            r_coords = self.coords[0] + 1, self.coords[1] + 1
+            l_coords = coords[0] + 1, coords[1] - 1
+            r_coords = coords[0] + 1, coords[1] + 1
 
         # Left enemy
         left_enemy = board_state[l_coords]
-        if (
-            left_enemy != Piece.EMPTY
-            and Piece.get_color(left_enemy) == self.enemy_color
-        ):
-            coords_set.add(l_coords)
+        if left_enemy != Piece.EMPTY:
+            if Piece.get_color(left_enemy) != pcolor:
+                moves.add(l_coords)
+        else:
+            if en_passant is not None and en_passant == l_coords:
+                moves.add(l_coords)
 
         # Right enemy
         right_enemy = board_state[r_coords]
-        if (
-            right_enemy != Piece.EMPTY
-            and Piece.get_color(right_enemy) == self.enemy_color
-        ):
-            coords_set.add(r_coords)
-        return coords_set
+        if right_enemy != Piece.EMPTY:
+            if Piece.get_color(right_enemy) != pcolor:
+                moves.add(r_coords)
+        else:
+            if en_passant is not None and en_passant == r_coords:
+                moves.add(r_coords)
+
+        return moves
 
     @staticmethod
-    def pawn_moves(board_state, piece_info):
+    def pawn_moves(board_state, piece_info, en_passant: Tuple[int, int]):
         """Override the get_moves from Piece class."""
         moves = set()
-        for md in [
-            MoveDirection.UP,
-            MoveDirection.DOWN,
-            MoveDirection.LEFT,
-            MoveDirection.RIGHT,
-        ]:
-            Piece.add_moves_in_direction(board_state, 2, piece_info, moves, md)
+        # for md in [
+        #     MoveDirection.UP,
+        #     MoveDirection.DOWN,
+        #     MoveDirection.LEFT,
+        #     MoveDirection.RIGHT,
+        # ]:
+        #     Piece.add_moves_in_direction(board_state, 2, piece_info, moves, md)
 
         """Override the get_moves from Piece class."""
         moves = set()
-        piece_code, piece_coords = piece_info[0]
+        piece_code, piece_coords = piece_info
         if Piece.get_color(piece_code) == Piece.WHITE:
             if piece_coords[0] >= 1:
                 coords_to_go = piece_coords[0] - 1, piece_coords[1]
@@ -275,11 +288,11 @@ class Piece:
                 piece_code2 = board_state[coords_to_go]
                 if piece_code == Piece.EMPTY and piece_code2 == Piece.EMPTY:
                     moves.add(coords_to_go)
-        self.get_attack_possible_coords(board_state, moves)
+        moves |= Piece.pawn_attack_moves(board_state, piece_info, en_passant)
         return moves
 
     @staticmethod
-    def get_possible_coords(piece_info: Tuple[int, Tuple[int, int]], board_state) -> Set[Tuple[int, int]]:
+    def get_possible_coords(board_state, piece_info: Tuple[int, Tuple[int, int]], en_passant: Tuple[int, int]) -> Set[Tuple[int, int]]:
         """Return all the possible coords for a piece.
 
         Returns all the possible coords given a piece_code and a board_state.
@@ -289,14 +302,19 @@ class Piece:
             piece_info : Tuple[int, Tuple[int, int]]
                 It containers the piece_code and the coordinates of the piece.
         """
-        return {
+        ptype = Piece.get_type(piece_info[0])
+        piece_func: Callable = {
             Piece.KING: Piece.king_moves,
             Piece.PAWN: Piece.pawn_moves,
             Piece.KNIGHT: Piece.knight_moves,
             Piece.BISHOP: Piece.bishop_moves,
             Piece.ROOK: Piece.rook_moves,
             Piece.QUEEN: Piece.queen_moves,
-        }[Piece.get_type(piece_info[0])](board_state, piece_info)
+        }[ptype]
+        if ptype == Piece.PAWN:
+            return piece_func(board_state, piece_info, en_passant)
+        else:
+            return piece_func(board_state, piece_info)
 
     @staticmethod
     def add_moves_in_direction(
