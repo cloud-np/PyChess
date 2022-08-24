@@ -69,6 +69,7 @@ class Piece:
     INVALID = 0x300  # 4096
 
     TYPE_MASK = 0xF  # 7
+    # ANTI_TYPE_MASK = 0xFF0
     UNIQUE_PIECE_MASK = 0xF0  # 240
     COLOR_MASK = 0xF00  # 3840
 
@@ -229,25 +230,28 @@ class Piece:
             l_coords = coords[0] + 1, coords[1] - 1
             r_coords = coords[0] + 1, coords[1] + 1
 
+        # We check for the enemy color to avoid to check for Piece.INVALID
+        # for example [5, 8] checks for != Piece.EMPTY and has diff color vs our pcolor
         # Left enemy
         left_enemy = board_state[l_coords]
-        if left_enemy != Piece.EMPTY:
-            if Piece.get_color(left_enemy) != pcolor:
-                moves.add(l_coords)
-        else:
-            if en_passant is not None and en_passant == l_coords:
-                moves.add(l_coords)
-
+        if left_enemy != Piece.EMPTY and Piece.get_enemy_color(left_enemy) == pcolor:
+            moves.add(l_coords)
+        elif en_passant is not None and en_passant == l_coords:
+            moves.add(l_coords)
         # Right enemy
         right_enemy = board_state[r_coords]
-        if right_enemy != Piece.EMPTY:
-            if Piece.get_color(right_enemy) != pcolor:
-                moves.add(r_coords)
-        else:
-            if en_passant is not None and en_passant == r_coords:
-                moves.add(r_coords)
+        if right_enemy != Piece.EMPTY and Piece.get_enemy_color(right_enemy) == pcolor:
+            moves.add(r_coords)
+        elif en_passant is not None and en_passant == r_coords:
+            moves.add(r_coords)
 
         return moves
+
+    @staticmethod
+    def is_promoting(coords: Tuple[int, int], color: int) -> bool:
+        """Detect if the Pawn is promoting based on each position and color.
+        Assumes that is used only for Pawns."""
+        return coords[0] == {Piece.WHITE: 0, Piece.BLACK: 7}[color]
 
     @staticmethod
     def pawn_moves(board_state, piece_info, en_passant: Tuple[int, int]):

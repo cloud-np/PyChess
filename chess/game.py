@@ -11,12 +11,13 @@ from chess.frontend.visuals import GameVisuals
 
 
 STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-# PROM_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - 0 1"
 STARTING_FEN = "rnbqk2r/ppp2ppp/3bpn2/3p4/3P4/3BPN2/PPP2PPP/RNBQK2R w KQkq - 0 1"
+# Promotion
+STARTING_FEN = "3q1rk1/rPpb1ppp/p2bpn2/8/P3P3/4BN2/2p1QPPP/RN3RK1 w - - 0 1"
 # Castling
 # STARTING_FEN = "r3k2r/pppbqppp/n2bpn2/3p4/3P4/2NBPN2/PPPBQPPP/R3K2R w KQkq - 0 1"
 # STARTING_FEN = "r1b1k2r/ppp2ppp/nb1qpn2/2Qp4/3P4/3BPN2/PPP2PPP/RNB1R1K1 b kq - 0 1"
-STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b - - 0 1"
+# STARTING_FEN = "rn1qkbnr/pb1pp1pp/1pp5/8/3P1p2/N1P1P3/PPQ2PPP/R1B1KBNR b - - 0 1"
 # STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 
@@ -226,7 +227,7 @@ class Game:
             __sim_seq(state, all_pieces, piece_code, start_coords=start_coords, end_coords=end_coords)
             func(state, all_pieces, start_coords, end_coords)
             # Simpliest thing to do simulate back what you simulated above.
-            __sim_seq(state, all_pieces, piece_code, end_coords=start_coords, start_coords=end_coords)
+            __sim_seq(state, all_pieces, piece_code, start_coords=end_coords, end_coords=start_coords)
         return __simulate_move
 
     # def simulate_move(self, sim_state, start_coords: int, end_coords: int, piece: Piece) -> None:
@@ -257,12 +258,25 @@ class Game:
         # NOTE Make it possible so the Pawn can transform here.
         castle_side: Optional[CastleSide]
 
+        piece_code = self.board.state[start_coords]
+        ptype = Piece.get_type(piece_code)
+        pcolor = Piece.get_color(piece_code)
+        if ptype == Piece.PAWN and Piece.is_promoting(end_coords, pcolor):
+            # if self.visuals:
+            #     ...
+            prom = input("Promote to: ")
+            prom_type = {
+                "q": Piece.QUEEN,
+                "r": Piece.ROOK,
+                "k": Piece.KNIGHT,
+                "b": Piece.BISHOP,
+            }["q"]
+            Board.promote_to(self.board.state, self.board.all_pieces, piece_code, prom_type)
+
         moving_piece, castle_side, en_passant = Game.update_board(self.board.state, self.board.all_pieces, self.board.castle_rights, self.board.en_passant, start_coords, end_coords)
         self.board.en_passant = en_passant
-        self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
-
         # Change the turn.
-        # self.is_white_turn = self.board.color_to_move == Piece.WHITE
+        self.board.color_to_move = BoardUtils.swap_colors(self.board.color_to_move)
 
         # Last move new fen is no the new old fen.
         old_fen = self.board.fen if len(self.moves_history) == 0 else self.moves_history[-1].curr_fen
@@ -273,7 +287,7 @@ class Game:
         return move
 
     @staticmethod
-    def update_board(board_state: BoardStateList, all_pieces, castle_rights, en_passant_coords: Tuple[int, int], old_coords: Tuple[int, int], new_coords: Tuple[int, int]):
+    def update_board(board_state: BoardStateList, all_pieces, castle_rights, en_passant: Tuple[int, int], start_coords: Tuple[int, int], end_coords: Tuple[int, int]):
         """Update the board state and pieces.
 
         Parameters
@@ -294,18 +308,26 @@ class Game:
         """
         # board.try_updating_castling(moving_piece)
         # Change the colour that has to move next.
-        moving_piece = board_state[old_coords]
+        moving_piece = board_state[start_coords]
         Board.try_update_castle_rights(castle_rights, moving_piece)
+        mpcolor = Piece.get_color(moving_piece)
 
         if Piece.get_type(moving_piece) == Piece.PAWN:
+            if en_passant == end_coords:
+                # Only a white piece's en-passant square can be on 5th row.
+                if en_passant[0] == 5:
+                    # Kill the white piece.
+                    board_state[en_passant[0] - 1, en_passant[1]] = Piece.EMPTY
+                elif en_passant[0] == 2:
+                    # Kill the black piece.
+                    board_state[en_passant[0] + 1, en_passant[1]] = Piece.EMPTY
+
             # Piece.pawn_attack_moves(board_state, (moving_piece, old_coords))
-            if abs(old_coords[0] - new_coords[0]) > 1:
-                row_skipped = new_coords[0] + (1 if Piece.get_color(moving_piece) == Piece.WHITE else -1)
-                en_passant_coords = (row_skipped, new_coords[1])
+            if abs(start_coords[0] - end_coords[0]) > 1:
+                row_skipped = end_coords[0] + (1 if mpcolor == Piece.WHITE else -1)
+                en_passant = (row_skipped, end_coords[1])
             else:
-                en_passant_coords = None
-            # if moving_piece.is_transforming():
-            #     ...
+                en_passant = None
         # self.board.transform_pawn_to(moving_pawn, piece_code)
 
         # Was the move a castling move?
@@ -313,7 +335,7 @@ class Game:
         ptype = Piece.get_type(moving_piece)
         if ptype == Piece.KING:
             # Try to get the castling side if it returns None then no castling move was made.
-            castle_side = CastleSide.get_side(new_coords)
+            castle_side = CastleSide.get_side(end_coords)
             if castle_side is not None:
                 Game.__update_rook_castle_pos(board_state, castle_side)
 
@@ -326,11 +348,11 @@ class Game:
         #     taken_piece.set_coords((-1, -1))
 
         # Update board state.
-        board_state[new_coords] = board_state[old_coords]
-        board_state[old_coords] = Piece.EMPTY
+        board_state[end_coords] = board_state[start_coords]
+        board_state[start_coords] = Piece.EMPTY
         # Update piece_lists
-        all_pieces[Piece.get_color(moving_piece)][ptype][moving_piece] = new_coords
-        return moving_piece, castle_side, en_passant_coords
+        all_pieces[mpcolor][ptype][moving_piece] = end_coords
+        return moving_piece, castle_side, en_passant
 
     @staticmethod
     def __update_rook_castle_pos(board_state: BoardStateList, castle_side: int) -> None:

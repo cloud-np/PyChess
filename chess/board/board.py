@@ -14,8 +14,8 @@ class BoardStateList(list):
         """Init."""
         super(BoardStateList, self).__init__(args[0])
 
-    def __setitem__(self, indexes, o):
-        """Made to handle tuples are indexes."""
+    def __setitem__(self, indexes, o) -> None:
+        """Made to handle tuples as indexes."""
         self[indexes[0]][indexes[1]] = o
 
     def __getitem__(self, indexes):
@@ -93,44 +93,29 @@ class Board:
             if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE:
                 castle_rights[pcolor][0] = False
 
-    def transform_pawn_to(self, moving_pawn: Piece, piece_code: int) -> None:
-        """Transform to a desired Piece.
+    @staticmethod
+    def promote_to(state, all_pieces, piece_code, prom_type) -> None:
+        """Promote to a desired Piece.
 
-        Transform to a desired Piece and removed the original Pawn from the list.
+        Promote to a desired Piece and update the all_pieces dictionary and state list.
 
         Parameters
         ----------
         piece_code : int
             Piece code that describes the piece type and color.
-
-        Raises
-        ------
-        Exception
-            [description]
         """
         # Create the Piece that the pawn will transform too
-        PieceConstructor = Board.piece_classes(piece_code)
-        transformed_piece = PieceConstructor(piece_code, moving_pawn.coords)
-        transformed_piece.times_moved = moving_pawn.times_moved
+        pcolor = Piece.get_color(piece_code)
+        ptype = Piece.get_type(piece_code)
+        piece_coords = all_pieces[pcolor][ptype][piece_code]
+        # Remove the pawn from the pawn list
+        all_pieces[pcolor][ptype].pop(piece_code)
 
-        # Update Pieces
-        if moving_pawn.color == Piece.WHITE:
-            self.w_pieces[moving_pawn.piece_code].remove(moving_pawn)
-            self.w_pieces[transformed_piece.piece_code].append(transformed_piece)
-        else:
-            self.b_pieces[moving_pawn.piece_code].remove(moving_pawn)
-            self.b_pieces[transformed_piece.piece_code].append(transformed_piece)
-
-    def kill_piece(self, dead_piece: Piece):
-        """Remove a piece from the board."""
-        self.dead_pieces.append(dead_piece)
-        dead_piece.is_dead = True
-
-        # Remove the dead piece from the piece lists
-        if dead_piece.color == Piece.WHITE:
-            self.w_pieces[dead_piece.piece_code].remove(dead_piece)
-        else:
-            self.b_pieces[dead_piece.piece_code].remove(dead_piece)
+        # Add it to the new piece list
+        # But we keep track of which pawn it is in case we need to find it again.
+        new_piece_code = Piece.get_the_specific_piece(piece_code) | prom_type | pcolor
+        all_pieces[pcolor][prom_type][new_piece_code] = piece_coords
+        state[piece_coords] = new_piece_code
 
     @staticmethod
     def simulate_board_state(board_state: BoardStateList) -> BoardStateList:
@@ -151,7 +136,7 @@ class Board:
         ...
 
     @staticmethod
-    def get_all_color_pieces(all_pieces, color: Literal[Piece.WHITE, Piece.BLACK]) -> List[Tuple[int, Tuple[int, int]]]:
+    def get_all_color_pieces(all_pieces, color) -> List[Tuple[int, Tuple[int, int]]]:
         return all_pieces[Piece.get_color(color)]
 
     @staticmethod
@@ -243,7 +228,7 @@ class Board:
             A list with all the Pieces objects that were created.
         """
         state = BoardStateList([[Piece.EMPTY for _ in range(8)] for _ in range(8)])
-        all_pieces: Dict[Dict[Tuple[int, int]]] = {
+        all_pieces: Dict[int, Dict[int, Tuple[int, int]]] = {
             Piece.WHITE: {
                 Piece.KING: {}, Piece.PAWN: {}, Piece.BISHOP: {},
                 Piece.KNIGHT: {}, Piece.ROOK: {}, Piece.QUEEN: {}
