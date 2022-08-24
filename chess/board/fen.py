@@ -1,5 +1,5 @@
 """Module for FEN notation."""
-from typing import Dict, List, Literal, Optional, Tuple, Any
+from typing import Dict, List, Literal, Optional, Tuple
 from .board_utils import BoardUtils
 from chess.pieces.piece import Piece
 
@@ -10,8 +10,8 @@ class Fen:
     @staticmethod
     def create_fen(
         board_state,
-        color_to_move: Literal[Piece.WHITE, Piece.BLACK],
-        caslting_rights: Optional[Dict[List[bool], List[bool]]] = None,
+        color_to_move: Literal[256, 512],
+        caslting_rights: Optional[Dict[int, List[bool]]] = None,
         en_passant: Optional[List[int]] = None,
         halfmove_clock: int = 0,
         fullmove_number: int = 1,
@@ -31,13 +31,16 @@ class Fen:
         return "-" if en_passant is None else BoardUtils.get_col_for_number(en_passant[1]) + str(8 - en_passant[0])
 
     @staticmethod
-    def get_color_to_move(fen: str) -> str:
+    def get_color_to_move(fen: str) -> Literal[256, 512]:
         """Get the en passant fen."""
         _, colour_to_move_fen, rest_of_fen = fen.split()
         return Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
 
     @staticmethod
-    def __get_castling_fen(castle_rights: Dict[List[bool], List[bool]]) -> str:
+    def __get_castling_fen(castle_rights: Optional[Dict[int, List[bool]]]) -> str:
+        if castle_rights is None:
+            raise Exception("Castling rights not found")
+
         ws, bs = castle_rights.values()
         castle_fen: str = "" + ("K" if ws[1] else "")
         castle_fen += "Q" if ws[0] else ""
@@ -79,8 +82,8 @@ class Fen:
         return fen[:-1]
 
     @staticmethod
-    def make_state_and_pieces(board_state_fen: str) -> Tuple[Any, List[int]]:
-        pieces: List[int] = []
+    def make_state_and_pieces(board_state_fen: str):
+        pieces = []
         pos: int = 0
         pawns_count: int = 0
         knights_count: int = 0
@@ -142,9 +145,9 @@ class Fen:
         return pieces
 
     @staticmethod
-    def create_castling_info(castling_fen: str):
+    def create_castling_info(castling_fen: str) -> Dict[int, List[bool]]:
         # Parse castling positions
-        castling: Dict[List[bool], List[bool]] = {
+        castling = {
             Piece.WHITE: [False, False],
             Piece.BLACK: [False, False],
         }
@@ -215,10 +218,10 @@ class Fen:
             raise ValueError("Wrong fen format") from None
 
         pieces = Fen.make_state_and_pieces(board_state_fen)
-        colour_to_move: Literal[Piece.WHITE, Piece.BLACK] = (
+        colour_to_move = (
             Piece.WHITE if colour_to_move_fen == "w" else Piece.BLACK
         )
-        castling: Dict[Tuple[int, int], Tuple[int, int]] = Fen.create_castling_info(castling_fen)
-        en_passant_coords: Optional[Tuple[int, int]] = Fen.create_en_passant_coords(en_passant_fen)
+        castling = Fen.create_castling_info(castling_fen)
+        en_passant: Optional[Tuple[int, int]] = Fen.create_en_passant_coords(en_passant_fen)
 
-        return pieces, colour_to_move, castling, en_passant_coords
+        return pieces, colour_to_move, castling, en_passant, int(halfmove_fen), int(fullmove_fen)

@@ -47,15 +47,16 @@ class Board:
         self.starting_fen: str = fen
         self.last_piece_moved: Optional[Piece] = None
 
-        self.color_to_move: Literal[Piece.WHITE, Piece.BLACK]
-        self.castle_rights: Dict[Tuple[int, int], Tuple[int, int]]
-        self.en_passant: Union[Tuple[int, int], str]
+        self.castle_rights: Dict[int, List[bool]]
+        self.en_passant: Optional[Tuple[int, int]]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,
             self.color_to_move,
             self.castle_rights,
             self.en_passant,
+            self.half_move_clock,
+            self.full_move
         ) = Fen.translate_to_state(fen)
 
         self.state, self.all_pieces = Board.setup_board_state_and_pieces(pcs_and_coords)
@@ -92,6 +93,17 @@ class Board:
             # Check if the rook moved was in the Left half of the board.
             if Piece.get_the_specific_piece(moving_piece) == Piece.LEFT_PIECE:
                 castle_rights[pcolor][0] = False
+
+    @staticmethod
+    def is_promoting(piece_code: int, end_coords: Tuple[int, int]) -> bool:
+        """Detect if the Pawn is promoting based on each position and color.
+        Assumes that is used only for Pawns."""
+        ptype = Piece.get_type(piece_code)
+        if ptype != Piece.PAWN:
+            return False
+
+        pcolor = Piece.get_color(piece_code)
+        return end_coords[0] == {Piece.WHITE: 0, Piece.BLACK: 7}[pcolor]
 
     @staticmethod
     def promote_to(state, all_pieces, piece_code, prom_type) -> None:
@@ -161,38 +173,6 @@ class Board:
         """Set the coords to a piece."""
         all_pieces[Piece.get_color(piece_code)][Piece.get_type(piece_code)][piece_code] = coords
 
-    # @staticmethod
-    # def organize_pieces(all_pieces: List[Piece], is_whites: bool) -> Dict[int, List[int]]:
-    #     """Given a team color it will return that team's pieces.
-
-    #     Parameters
-    #     ----------
-    #     is_whites : bool
-    #         Whether or not white pieces were asked to be returned.
-
-    #     Returns
-    #     -------
-    #     Dict[int, List[int]]
-    #         A map of the existing (white or black) pieces
-    #         separated in lists based on their type.
-    #     """
-    #     color_given = Piece.WHITE if is_whites else Piece.BLACK
-    #     pieces: Dict[Dict[Tuple[int, int]]] = {
-    #         Piece.KING: {},
-    #         Piece.PAWN: {},
-    #         Piece.BISHOP: {},
-    #         Piece.KNIGHT: {},
-    #         Piece.ROOK: {},
-    #         Piece.QUEEN: {},
-    #     }
-
-    #     for pc, coords in all_pieces:
-    #         color = Piece.get_color(pc)
-    #         ptype = Piece.get_type(pc)
-    #         if color == color_given:
-    #             pieces[ptype][pc] = coords
-    #     return pieces
-
     @staticmethod
     def piece_classes(piece_code: int) -> dict:
         """Map in a dictionary all the functions for the pieces.
@@ -228,7 +208,7 @@ class Board:
             A list with all the Pieces objects that were created.
         """
         state = BoardStateList([[Piece.EMPTY for _ in range(8)] for _ in range(8)])
-        all_pieces: Dict[int, Dict[int, Tuple[int, int]]] = {
+        all_pieces = {
             Piece.WHITE: {
                 Piece.KING: {}, Piece.PAWN: {}, Piece.BISHOP: {},
                 Piece.KNIGHT: {}, Piece.ROOK: {}, Piece.QUEEN: {}

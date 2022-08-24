@@ -1,12 +1,11 @@
 """Creates the visuals for the game."""
 import pygame as py_g
-from typing import List, Tuple, Optional, Union
-from chess.move import Move
+from typing import List, Tuple, Optional, Any
 from colorama import Fore
-from chess.board.board import BoardStateList
+from chess.board.board import BoardStateList, Board
 from itertools import chain
 from chess.ai.move_picker import random_legal_move
-from chess.pieces.piece import Piece, CastleSide
+from chess.pieces.piece import Piece
 
 
 IMGS_PATH = "chess/frontend/assets/images"
@@ -81,7 +80,7 @@ class Tile:
         self.piece_img: Optional[py_g.Surface] = piece_img
         self.is_white: bool = is_white
         self.text_surface: Optional[py_g.Surface] = text_surface
-        self.shape = {'x': None, 'y': None, 'w': None, 'h': None}
+        self.shape: Any = {'x': None, 'y': None, 'w': None, 'h': None}
 
     def __str__(self):
         """Represent the tile."""
@@ -106,6 +105,7 @@ class GameVisuals:
         self.show_imgs: bool = False
         self.is_running: bool = False
         self.is_piece_picked: bool = False
+        self.promoting_piece: Optional[int] = None
         self.clock = py_g.time.Clock()
         self.screen = py_g.display.set_mode(VISUAL_BOARD_SIZE)
         self.picked_piece = {"img": None, "coords": None}
@@ -135,23 +135,67 @@ class GameVisuals:
     def draw_bg(self):
         """Keep background-img on the screen refreshed."""
         self.screen.fill((0, 0, 0))
-        self.screen.blit(self.background.image, self.background.rect)
+        if self.background.image is not None and self.background.rect is not None:
+            self.screen.blit(self.background.image, self.background.rect)
+        else:
+            raise Exception("Background image not found.")
+
+    def left_most_tile(self) -> Tile:
+        return min((min(row, key=lambda x: x.shape['x']) for row in self.tiles), key=lambda x: x.shape['x'])
+
+    def right_most_tile(self) -> Tile:
+        return max((max(row, key=lambda x: x.shape['x']) for row in self.tiles), key=lambda x: x.shape['x'])
+
+    def lowest_most_tile(self) -> Tile:
+        return min((min(row, key=lambda x: x.shape['y']) for row in self.tiles), key=lambda x: x.shape['y'])
+
+    def highest_most_tile(self) -> Tile:
+        return max((max(row, key=lambda x: x.shape['y']) for row in self.tiles), key=lambda x: x.shape['y'])
+
+    def get_board_corners(self):
+        left_tile = self.left_most_tile()
+        right_tile = self.right_most_tile()
+        highest_tile = self.highest_most_tile()
+        lowest_tile = self.lowest_most_tile()
+
+        return left_tile.shape['x'], right_tile.shape['x'], lowest_tile.shape['y'], highest_tile.shape['y']
+
+    def draw_promoting_choice(self) -> None:
+        left, right, bottom, top = self.get_board_corners()
+        y = bottom + top // 2
+
+        color = (30, 54, 50)
+        # Set the width, height
+        s = py_g.Surface((right + 100, 200))
+        s.set_alpha(228)
+        s.fill(color)
+
+        if not self.promoting_piece:
+            raise Exception("No piece code was given.")
+        pcolor = Piece.get_color(self.promoting_piece)
+        bishop = Piece.get_img_for_piece(pcolor | Piece.BISHOP, IMGS_PATH)
+        knight = Piece.get_img_for_piece(pcolor | Piece.KNIGHT, IMGS_PATH)
+        rook = Piece.get_img_for_piece(pcolor | Piece.ROOK, IMGS_PATH)
+        queen = Piece.get_img_for_piece(pcolor | Piece.QUEEN, IMGS_PATH)
+
+        # Draw panel
+        self.screen.blit(s, (left, y))
+        for i, piece in enumerate([bishop, knight, rook, queen]):
+            img = py_g.image.load(piece)
+            img = py_g.transform.scale(img, (100, 100))
+            self.screen.blit(img, (left + 200 + 100 * i, y + 50))
 
     def draw_indexes(self, normalised=False) -> None:
         """Show the index number of the tile on screen."""
         for i, tile in enumerate(chain.from_iterable(zip(*self.tiles))):
-            tile.text_surface = self.font.render(
-                f"{tile.coords if normalised is False else i}", False, (0, 0, 0))
-            self.screen.blit(tile.text_surface,
-                             (tile.shape['x'], tile.shape['y']))
+            tile.text_surface = self.font.render(f"{tile.coords if normalised is False else i}", False, (0, 0, 0))
+            self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
     def draw_imgs(self) -> None:
         """Show the index number of the tile on screen."""
         for tile in chain.from_iterable(zip(*self.tiles)):
-            tile.text_surface = self.font.render(
-                f"{'IMG' if tile.piece_img is not None else ''}", False, (0, 0, 0))
-            self.screen.blit(tile.text_surface,
-                             (tile.shape['x'], tile.shape['y']))
+            tile.text_surface = self.font.render(f"{'IMG' if tile.piece_img is not None else ''}", False, (0, 0, 0))
+            self.screen.blit(tile.text_surface, (tile.shape['x'], tile.shape['y']))
 
     def draw_picked_piece(self, m_pos) -> None:
         """Show the picked piece."""
@@ -160,27 +204,24 @@ class GameVisuals:
         self.screen.blit(
             self.picked_piece["img"], (m_pos[0] - 50, m_pos[1] - 50))
 
-    def draw_played_move(self) -> None:
-        """Change the colour of the squares of the move that got played."""
-        rect = [[], []]
-        for i, tile in enumerate(self.tiles):
-            for value in tile.shape.values():
-                if i == 0:
-                    rect[0].append(value)
-                else:
-                    rect[1].append(value)
+    # def draw_played_move(self) -> None:
+    #     """Change the colour of the squares of the move that got played."""
+    #     rect = [[], []]
+    #     for i, row in enumerate(self.tiles):
+    #         for j, tile in enumerate(row):
+    #             for value in tile.shape.values():
+    #                 if i == 0:
+    #                     rect[0].append(value)
+    #                 else:
+    #                     rect[1].append(value)
 
-            if i == 0:
-                rect[0].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[0].append(
-                    Tile.B_TILE_CLICKED_COLOUR)
-            else:
-                rect[1].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[1].append(
-                    Tile.B_TILE_CLICKED_COLOUR)
+    #             if j == 0:
+    #                 rect[0].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[0].append(Tile.B_TILE_CLICKED_COLOUR)
+    #             else:
+    #                 rect[1].append(Tile.W_TILE_CLICKED_COLOUR) if tile.is_white else rect[1].append(Tile.B_TILE_CLICKED_COLOUR)
 
-        py_g.draw.rect(
-            self.screen, rect[0][4], (rect[0][0], rect[0][1], rect[0][2], rect[0][3]))
-        py_g.draw.rect(
-            self.screen, rect[1][4], (rect[1][0], rect[1][1], rect[1][2], rect[1][3]))
+    #     py_g.draw.rect(self.screen, rect[0][4], (rect[0][0], rect[0][1], rect[0][2], rect[0][3]))
+    #     py_g.draw.rect(self.screen, rect[1][4], (rect[1][0], rect[1][1], rect[1][2], rect[1][3]))
 
     def main_loop(self) -> None:
         """Major visual loop of the program."""
@@ -198,7 +239,7 @@ class GameVisuals:
                     print("GG no legal moves")
                 else:
                     self.game.register_move(*move_coords)
-                    self.load_state(self.game.board.board_state)
+                    self.load_state(self.game.board.state)
                     print(self.game.board)
 
             # Keep tracking the position of the mouse
@@ -221,7 +262,11 @@ class GameVisuals:
             elif event_code == EventType.SHOW_IMGS:
                 self.show_imgs = not self.show_imgs
             elif event_code == EventType.MOUSE_BUTTONDOWN:
-                self.is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
+                if self.promoting_piece:
+                    self.click_promote((mx, my))
+                    self.load_state(self.game.board.state)
+                else:
+                    self.is_piece_picked = self.try_pick_piece(m_pos=(mx, my))
             elif self.is_piece_picked and event_code == EventType.MOUSE_BUTTONUP:
                 # If trying placing the piece was successfull the piece is not longer picked up.
                 self.is_piece_picked = not self.try_place_piece(m_pos=(mx, my))
@@ -238,19 +283,26 @@ class GameVisuals:
             if self.show_normalized_indexes:
                 self.draw_indexes(normalised=True)
 
+            if self.promoting_piece:
+                self.draw_promoting_choice()
+
             # Update everything on the screen
             py_g.display.update()
 
-    def update_visuals_based_on_move(self, move):
-        """Update the visuals based on the move that got played."""
-        # Update Game state
-        self.load_state(self.game.board.state)
-        # if move.castling_side is not None:
-        #     self.place_castling_rook(move.castling_side)
-        # s_tile = self.tiles[move.start_coords[0]][move.start_coords[1]]
-        # e_tile = self.tiles[move.end_coords[0]][move.end_coords[1]]
-        # e_tile.piece_img = s_tile.piece_img
-        # s_tile.piece_img = None
+    def click_promote(self, m_pos):
+        left, right, top, bottom = self.get_board_corners()
+
+        _, coords = self.tile_clicked(m_pos=m_pos)
+        prom_type = {
+            (4, 2): Piece.BISHOP,
+            (4, 3): Piece.KNIGHT,
+            (4, 4): Piece.ROOK,
+            (4, 5): Piece.QUEEN
+        }[coords]
+
+        # self.screen.blit(img, (left + 200 + 100 * i, y + 50))
+        Board.promote_to(self.game.board.state, self.game.board.all_pieces, self.promoting_piece, prom_type)
+        self.promoting_piece = None
 
     def try_place_piece(self, m_pos) -> bool:
         # sourcery skip: inline-immediately-returned-variable
@@ -267,13 +319,23 @@ class GameVisuals:
             Where or not it was able to place the picked piece.
         """
         _, clicked_coords = self.tile_clicked(m_pos)
+        start_coords = self.picked_piece["coords"]
 
         # If this happens place the piece back.
-        if self.picked_piece["coords"] == clicked_coords:
+        if start_coords == clicked_coords:
             if self.picked_piece['img'] is not None:
                 self.place_picked_piece_back()
             return True
-        elif self.game.is_player_move_valid(self.picked_piece["coords"], clicked_coords):
+        elif self.game.is_player_move_valid(start_coords, clicked_coords):
+            if Board.is_promoting(self.game.board.state[start_coords], clicked_coords):
+                # prom = input("Promote to: ")
+                # prom_type = {
+                #     "q": Piece.QUEEN,
+                #     "r": Piece.ROOK,
+                #     "k": Piece.KNIGHT,
+                #     "b": Piece.BISHOP,
+                # }[prom]
+                self.promoting_piece = self.game.board.state[start_coords]
             self.game.register_move(self.picked_piece["coords"], clicked_coords)
             print(self.game.board)
             self.load_state(self.game.board.state)
@@ -281,19 +343,19 @@ class GameVisuals:
             return True
         return False
 
-    def place_castling_rook(self, castle_side: CastleSide):
-        """Place the rook on the screen from the given positions.
+    # def place_castling_rook(self, castle_side: CastleSide):
+    #     """Place the rook on the screen from the given positions.
 
-        Parameters
-        ----------
-        castling_info : dict
-            This includes the info of where the rook will be placed and were it used to be.
-        """
-        new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
-        rook_tile = self.tiles[rook_coords[0]][rook_coords[1]]
-        new_rook_tile = self.tiles[new_rook_coords[0]][new_rook_coords[1]]
-        new_rook_tile.piece_img = rook_tile.piece_img
-        rook_tile.piece_img = None
+    #     Parameters
+    #     ----------
+    #     castling_info : dict
+    #         This includes the info of where the rook will be placed and were it used to be.
+    #     """
+    #     new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
+    #     rook_tile = self.tiles[rook_coords[0]][rook_coords[1]]
+    #     new_rook_tile = self.tiles[new_rook_coords[0]][new_rook_coords[1]]
+    #     new_rook_tile.piece_img = rook_tile.piece_img
+    #     rook_tile.piece_img = None
 
     def place_picked_piece_back(self) -> None:
         """Place the picked piece back to its original tile."""

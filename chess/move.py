@@ -1,5 +1,5 @@
 """Anything related to a move how it was executed."""
-from typing import Set, Tuple, Dict
+from typing import Set, Tuple
 import re
 
 # from chess.board import Board
@@ -226,7 +226,7 @@ class MoveDecoder:
     #     self.coords = self.__parse_coords()
 
     @staticmethod
-    def parse_coords(input_str) -> Tuple[int, int]:
+    def parse_coords(input_str) -> Tuple[Tuple[int, int], Tuple[int, int]] | Tuple[None, None]:
         """Parse the coords of the move from the input string.
 
         Parameters
@@ -236,15 +236,15 @@ class MoveDecoder:
 
         Returns
         -------
-        Tuple[int, int]
-            The coords of the move.
+        Tuple[Tuple[int, int], Tuple[int, int]] | Tuple[None, None]:
+            The coords of the move or None if the input string is invalid.
         """
         if re.search("[a-h][1-8]{1}", input_str):
             # We have a valid move.
             start_tile = MoveDecoder.get_tile_coords(input_str[:2])
             end_tile = MoveDecoder.get_tile_coords(input_str[2:])
             return start_tile, end_tile
-        return Exception("Invalid move input.")
+        return None, None
 
     @staticmethod
     def get_tile_coords(tile: str):

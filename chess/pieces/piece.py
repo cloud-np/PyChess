@@ -1,6 +1,6 @@
 """Includes the base class for each Piece."""
 from chess.move import MoveDirection, Move
-from typing import Tuple, Set, Optional, List, Dict, Callable
+from typing import Tuple, Set, Optional, List, Dict, Callable, Literal
 
 
 class CastleSide:
@@ -12,7 +12,7 @@ class CastleSide:
     BK_SIDE_R = 3
 
     @staticmethod
-    def get_side(end_coords) -> 'CastleSide':
+    def get_side(end_coords) -> Optional[int]:
         """Return the side of the castle.
 
         We use .get() to avoid KeyErrors.
@@ -123,19 +123,19 @@ class Piece:
 
         return False
 
-    @staticmethod
-    def get_enemy_possible_coords(enemy_pieces, board_state):
-        """Get all the enemy moves."""
-        enemy_possible_coords = set()
-        for ptype, enemy_list in enemy_pieces.items():
-            for en, en_coords in enemy_list:
-                # if piece_code == Piece.PAWN:
-                #     enemy_possible_coords = enemy_possible_coords | en.get_attack_possible_coords(board_state)
-                # else:
-                enemy_possible_coords = (
-                    enemy_possible_coords | Piece.get_possible_coords((en, en_coords), board_state)
-                )
-        return enemy_possible_coords
+    # @staticmethod
+    # def get_enemy_possible_coords(board_state, enemy_pieces, en_passant):
+    #     """Get all the enemy moves."""
+    #     enemy_possible_coords = set()
+    #     for ptype, enemy_list in enemy_pieces.items():
+    #         for en, en_coords in enemy_list:
+    #             # if piece_code == Piece.PAWN:
+    #             #     enemy_possible_coords = enemy_possible_coords | en.get_attack_possible_coords(board_state)
+    #             # else:
+    #             enemy_possible_coords = (
+    #                 enemy_possible_coords | Piece.get_possible_coords((en, en_coords), board_state, en_passant)
+    #             )
+    #     return enemy_possible_coords
 
     @staticmethod
     def get_castle_coords(piece_code: int, side: int) -> Optional[List[Tuple[int, int]]]:
@@ -247,11 +247,6 @@ class Piece:
 
         return moves
 
-    @staticmethod
-    def is_promoting(coords: Tuple[int, int], color: int) -> bool:
-        """Detect if the Pawn is promoting based on each position and color.
-        Assumes that is used only for Pawns."""
-        return coords[0] == {Piece.WHITE: 0, Piece.BLACK: 7}[color]
 
     @staticmethod
     def pawn_moves(board_state, piece_info, en_passant: Tuple[int, int]):
@@ -399,7 +394,7 @@ class Piece:
             raise Exception("Not a valid piece_code to get a symbol!")
 
     @staticmethod
-    def get_color(piece_code: int) -> int:
+    def get_color(piece_code: int) -> Literal[256, 512]:
         """Filter the piece_code and find the piece color.
 
         Parameters
