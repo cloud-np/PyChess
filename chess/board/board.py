@@ -49,6 +49,7 @@ class Board:
 
         self.castle_rights: Dict[int, List[bool]]
         self.en_passant: Optional[Tuple[int, int]]
+        self.color_to_move: Literal[256, 512]
         # This assign does nothing here its just for readability.
         (
             pcs_and_coords,
@@ -277,7 +278,7 @@ class Board:
 
     def get_fen(self) -> str:
         """Get the fen for the board."""
-        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castle_rights, self.en_passant)
+        self.fen = Fen.create_fen(self.state, self.color_to_move, self.castle_rights, self.en_passant, self.half_move_clock, self.full_move)
         return self.fen
 
     def __str__(self):

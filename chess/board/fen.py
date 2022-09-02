@@ -12,8 +12,8 @@ class Fen:
         board_state,
         color_to_move: Literal[256, 512],
         caslting_rights: Optional[Dict[int, List[bool]]] = None,
-        en_passant: Optional[List[int]] = None,
-        halfmove_clock: int = 0,
+        en_passant: Optional[Tuple[int, int]] = None,
+        half_move_clock: int = 0,
         fullmove_number: int = 1,
     ) -> str:
         """Given the board state it produces the fen string."""
@@ -23,10 +23,10 @@ class Fen:
         colour_f: str = " w " if color_to_move == Piece.WHITE else " b "
         cast_f: str = Fen.__get_castling_fen(caslting_rights) if caslting_rights is not None else "-"
         en_passant_fen: str = Fen.__get_en_passant_fen(en_passant)
-        return board_state_f + colour_f + cast_f + " " + en_passant_fen
+        return f"{board_state_f}{colour_f}{cast_f} {en_passant_fen} {half_move_clock} {fullmove_number}"
 
     @staticmethod
-    def __get_en_passant_fen(en_passant: Optional[List[int]]) -> str:
+    def __get_en_passant_fen(en_passant: Optional[Tuple[int, int]]) -> str:
         """Get the en passant fen."""
         return "-" if en_passant is None else BoardUtils.get_col_for_number(en_passant[1]) + str(8 - en_passant[0])
 
