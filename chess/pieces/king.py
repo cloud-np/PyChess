@@ -1,6 +1,6 @@
 """Includes the class for each Pawn."""
 from chess.pieces.piece import Piece
-from chess.move import MoveDirection
+from chess.moves.move import MoveDirection
 
 
 class King(Piece):
@@ -17,21 +17,21 @@ class King(Piece):
     WK_L_CASTLE = [(7, 3), (7, 2), (7, 1)]
     BK_L_CASTLE = [(0, 3), (0, 2), (0, 1)]
 
-    def __init__(self, piece_code: int, coords: tuple):
+    def __init__(self, piece: np.uint32, coords: tuple):
         """Init the King.
 
         Parameters
         ----------
-        piece_code : int
+        piece : int
             A binary way to represent our pieces.
         coords : tuple
             The coordinates of the piece.
         """
         self.range_limit = 2
-        piece_colour = Piece.get_color(piece_code)
+        piece_colour = Piece.get_color(piece)
         self.r_castle = {'is_valid': True, 'coords_list': King.WK_R_CASTLE if piece_colour == Piece.WHITE else King.BK_R_CASTLE}
         self.l_castle = {'is_valid': True, 'coords_list': King.WK_L_CASTLE if piece_colour == Piece.WHITE else King.BK_L_CASTLE}
-        super().__init__(piece_code, coords)
+        super().__init__(piece, coords)
 
     def get_castling_coords(self, board):
         """Try adding the roke moves if they are valid."""
@@ -45,36 +45,36 @@ class King(Piece):
             possible_castle_coords.add((7, 2) if self.color == Piece.WHITE else (0, 2))
         return possible_castle_coords
 
-    def in_check(self, enemies_pieces, board_state):
+    def in_check(self, enemies_pieces, state):
         """Check if the king is in check."""
         # Check if the king is in check from the rest of the pieces
         enemy_possible_coords = set()
-        for piece_code, enemy_list in enemies_pieces.items():
-            if piece_code == Piece.PAWN | self.enemy_color:
+        for piece, enemy_list in enemies_pieces.items():
+            if piece == Piece.PAWN | self.enemy_color:
                 continue
 
             # NOTE: Keep track of the attacking direction of the enemy piece.
             #       THERE MAY BE 2 DIRECTIONS OF ATTACKING.
             for en in enemy_list:
-                enemy_possible_coords = en.get_possible_coords(board_state)
+                enemy_possible_coords = en.get_possible_coords(state)
                 if self.coords in enemy_possible_coords:
                     return True
 
         # Check if the king is in check from pawns
         enemy_pawns = enemies_pieces[Piece.PAWN | self.enemy_color]
         for en_pawn in enemy_pawns:
-            enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(board_state)
+            enemy_possible_coords = enemy_possible_coords | en_pawn.get_attack_possible_coords(state)
             if self.coords in enemy_possible_coords:
                 return True
 
         return False
 
-    def get_possible_coords(self, board_state):
+    def get_possible_coords(self, state):
         """Override the get_moves from Piece class."""
         moves = set()
         for md in [MoveDirection.UP, MoveDirection.DOWN, MoveDirection.LEFT, MoveDirection.RIGHT, MoveDirection.UP_LEFT,
                    MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
-            self.add_moves_in_direction(board_state, moves, md)
+            self.add_moves_in_direction(state, moves, md)
         return moves
 
     # def in_checkmate(self):

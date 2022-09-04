@@ -1,6 +1,6 @@
 """Includes the class for each Pawn."""
 from chess.pieces.piece import Piece
-from chess.move import MoveDirection
+from chess.moves.move import MoveDirection
 
 
 class Bishop(Piece):
@@ -12,7 +12,7 @@ class Bishop(Piece):
         The base class we inherit from.
     """
 
-    def __init__(self, piece_code: int, coords: tuple):
+    def __init__(self, piece: np.uint32, coords: tuple):
         """Init the King.
 
         Parameters
@@ -25,13 +25,13 @@ class Bishop(Piece):
             The coordinates of the piece.
         """
         self.range_limit = 8
-        super().__init__(piece_code, coords)
+        super().__init__(piece, coords)
 
     # def get_moves(self):
     #     """Override the get_moves from Piece class."""
     #     return 0
 
-    def get_possible_coords(self, board_state):
+    def get_possible_coords(self, state):
         """Get all possible moves for the Bishop.
 
         Parameters
@@ -47,5 +47,5 @@ class Bishop(Piece):
         moves = set()
         # Get all possible moves for the Bishop.
         for md in [MoveDirection.UP_LEFT, MoveDirection.UP_RIGHT, MoveDirection.DOWN_LEFT, MoveDirection.DOWN_RIGHT]:
-            self.add_moves_in_direction(board_state, moves, md)
+            self.add_moves_in_direction(state, moves, md)
         return moves

@@ -1,5 +1,7 @@
 """Anything related to a move how it was executed."""
-from typing import Set, Tuple
+from typing import Callable, Set, Tuple
+from chess.board import BoardUtils
+import numpy as np
 import re
 
 # from chess.board import Board
@@ -17,80 +19,11 @@ TILE_NAMES = "abcdefgh"
 """ We should hardcode this values so we can evaluate
     faster which moves are in-bounds or not. """
 INVALID_TILES: Set[int] = {
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    20,
-    30,
-    40,
-    60,
-    70,
-    80,
-    90,
-    19,
-    29,
-    39,
-    49,
-    59,
-    69,
-    79,
-    89,
-    99,
-    100,
-    101,
-    102,
-    103,
-    104,
-    105,
-    106,
-    107,
-    108,
-    109,
-    110,
-    111,
-    112,
-    113,
-    114,
-    115,
-    116,
-    117,
-    118,
-    119,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+    20, 30, 40, 60, 70, 80, 90, 19, 29, 39, 49, 59, 69, 79, 89, 99, 100,
+    101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114,
+    115, 116, 117, 118, 119,
 }
-
-
-class MoveTypes:
-    """A binary way to represent moves and move actions."""
-
-    NORMAL = 0
-    TAKES = 1
-    CHECK = 2
-    CASTLE_SHORT = 3
-    CASTLE_LONG = 5
-    CHECKMATE = 6
-    EN_PASSAT = 7
-
-    ILLEGAL = 8
-    VALUE_ERROR = 16
-
-    MOVE_MASK = 0b00111
-    ERROR_MASK = 0b11000
 
 
 class MoveDirection:
@@ -110,12 +43,30 @@ class MoveDirection:
 
 
 class Move:
-    """Holds info about the move made."""
+    """To preserve memory during search, moves are stored as 16 bit numbers.
+    The format is as follows:
+        bit 0-5: from square (0 to 63)
+        bit 6-11: to square (0 to 63)
+        bit 12-15: flag
+    """
+    NORMAL = 0
+    EN_PASSANT_CAPTURE = 1
+    CASTLE = 2
+    PROMOTE_QUEEN = 3
+    PROMOTE_BISHOP = 4
+    PROMOTE_ROOK = 5
+    PROMOTE_KNIGHT = 6
+    PAWN_TWO_STEP = 7
+
+    START_COORDS_MASK = 0b0000000000111111
+    SECOND_COORDS_MASK = 0b0000111111000000
+    FLAG_MASK = 0b1111000000000000
+
 
     def __init__(
         self,
-        move_num: int,
-        moving_piece: int,
+        move_value: int,
+        moving_piece: np.uint32,
         start_coords: Tuple[int, int],
         end_coords: Tuple[int, int],
         castle_side,
@@ -123,17 +74,28 @@ class Move:
         curr_fen: str,
     ):
         """Components to indentify a move."""
-        self.move_num: int = move_num
-        self.moving_piece: int = moving_piece
+        self.move_value: int = move_value
+        self.moving_piece: np.uint32 = moving_piece
         self.start_coords: Tuple[int, int] = start_coords
         self.end_coords: Tuple[int, int] = end_coords
         self.castle_side = castle_side
         self.old_fen: str = old_fen
         self.curr_fen: str = curr_fen 
     
+    @staticmethod
+    def get_start_coords(move_value: int) -> Tuple[int, int]:
+        return BoardUtils.get_coords_from_index(move_value & Move.START_COORDS_MASK)
 
     @staticmethod
-    def get_direction_func(direction: MoveDirection):
+    def get_end_coords(move_value: int) -> Tuple[int, int]:
+        return BoardUtils.get_coords_from_index((move_value >> 5) & Move.SECOND_COORDS_MASK)
+
+    @staticmethod
+    def get_flag(move_value: int) -> int:
+        return (move_value >> 11) & Move.FLAG_MASK
+
+    @staticmethod
+    def get_direction_func(direction: int) -> Callable:
         """Return the function that corrisponds to the move direction."""
         return {
             MoveDirection.UP: Move.up,
@@ -263,7 +225,7 @@ class MoveDecoder:
     #     return (
     #         f"start_tile: {self.start_tile}\n"
     #         f"end_tile: {self.end_tile}\n"
-    #         f"piece_code: {self.piece_code}\n"
+    #         f"piece: {self.piece}\n"
     #         f"move_code: {self.move_code}\n"
     #     )
 

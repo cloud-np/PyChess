@@ -1,5 +1,6 @@
 """Creates the visuals for the game."""
 from email.policy import default
+import numpy as np
 import pygame as py_g
 from typing import List, Tuple, Optional, Any
 from colorama import Fore
@@ -91,7 +92,7 @@ class Tile:
 class GameVisuals:
     """Visuals for the game."""
 
-    def __init__(self, game, board_state: BoardStateList):
+    def __init__(self, game, state: np.ndarray):
         """Needs the same pygame module from the Game class.
 
         Parameters
@@ -122,7 +123,7 @@ class GameVisuals:
         # Maybe this crashes only on linux.
         # py_g.display.set_icon(py_g.image.load("{IMGS_PATH}/chess_icon.png"))
 
-        self.load_state(board_state)
+        self.load_state(state)
 
     def set_picked_piece(self, coords):
         """Set the piece that is getting dragged.
@@ -240,7 +241,7 @@ class GameVisuals:
                 if move_coords is None:
                     print("GG no legal moves")
                 else:
-                    self.game.register_move(*move_coords)
+                    self.game.make_move(*move_coords)
                     self.load_state(self.game.board.state)
                     print(self.game.board)
 
@@ -277,7 +278,8 @@ class GameVisuals:
                 self.draw_picked_piece(m_pos=(mx, my))
 
             if self.show_imgs:
-                self.draw_imgs()
+                self.game.generate_all_moves(self.game.board.state, self.game.board.all_pieces, self.game.board.castle_rights, self.game.board.en_passant, 2)
+                # self.draw_imgs()
 
             if self.show_indexes:
                 self.draw_indexes()
@@ -307,7 +309,7 @@ class GameVisuals:
                 prom_type = None
 
         if prom_type is not None:
-            Board.promote_to(self.game.board.state, self.game.board.all_pieces, self.promoting_piece, prom_type)
+            Board.promote_to(self.game.board.state, self.promoting_piece, prom_type)
             self.promoting_piece = None
 
     def try_place_piece(self, m_pos) -> bool:
@@ -342,7 +344,7 @@ class GameVisuals:
                 #     "b": Piece.BISHOP,
                 # }[prom]
                 self.promoting_piece = self.game.board.state[start_coords]
-            self.game.register_move(self.picked_piece["coords"], clicked_coords)
+            self.game.make_move(self.picked_piece["coords"], clicked_coords)
             print(self.game.board)
             self.load_state(self.game.board.state)
             self.change_cursor("arrow")
@@ -438,11 +440,11 @@ class GameVisuals:
             The index and piece that occupies the tile.
         """
         row, col = ((m_pos[1] - self.board_offset[1]) // 100), ((m_pos[0] - self.board_offset[0]) // 100)
-        piece_code: int = self.game.board.state[row, col]
+        piece: np.uint32 = self.game.board.state[row, col]
 
         if self.game.debug:
             print(m_pos, f"tile: [ {row}, {col} ]")
-        return piece_code, (row, col)
+        return piece, (row, col)
 
     @staticmethod
     def check_for_events():
@@ -475,12 +477,12 @@ class GameVisuals:
             #     history['player'] += 1
         return EventType.NO_EVENT
 
-    def load_state(self, board_state: BoardStateList):
+    def load_state(self, state: BoardStateList):
         """Make the visual tiles for the board.
 
         Parameters
         ----------
-        board_state : List[List[int]]
+        state : List[List[int]]
             Holds the information for every piece on board.
         """
         x_pos = 0
@@ -501,7 +503,7 @@ class GameVisuals:
                 colour = not colour
                 tile.shape = {'x': x_pos, 'y': y_pos, 'w': width, 'h': height}
 
-                image_path = Piece.get_img_for_piece(board_state[i, j], IMGS_PATH)
+                image_path = Piece.get_img_for_piece(state[i, j], IMGS_PATH)
                 # In case its an empty tile
                 if len(image_path) != 0:
                     # Draw pieces and add the piece to 'database'
