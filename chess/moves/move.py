@@ -82,6 +82,12 @@ class Move:
         self.old_fen: str = old_fen
         self.curr_fen: str = curr_fen 
     
+    @classmethod
+    def from_start_end_coords(cls, start_coords: Tuple[int, int], end_coords: Tuple[int, int]):
+        cls.move_value = BoardUtils.get_index_from_coords(start_coords)
+        cls.move_value |= BoardUtils.get_index_from_coords(end_coords)
+        return cls
+    
     @staticmethod
     def get_start_coords(move_value: int) -> Tuple[int, int]:
         return BoardUtils.get_coords_from_index(move_value & Move.START_COORDS_MASK)
