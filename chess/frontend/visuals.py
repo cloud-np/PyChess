@@ -4,7 +4,7 @@ import numpy as np
 import pygame as py_g
 from typing import List, Tuple, Optional, Any
 from colorama import Fore
-from chess.board.board import BoardStateList, Board
+from chess.board.board import Board
 from itertools import chain
 from chess.ai.move_picker import random_legal_move
 from chess.pieces.piece import Piece
@@ -477,7 +477,7 @@ class GameVisuals:
             #     history['player'] += 1
         return EventType.NO_EVENT
 
-    def load_state(self, state: BoardStateList):
+    def load_state(self, state: np.ndarray):
         """Make the visual tiles for the board.
 
         Parameters
