@@ -166,6 +166,10 @@ class Board:
         # return (kpos[1][0], kpos[1][0])
         return self.all_pieces[color][Piece.KING][Piece.KING | color]
 
+    @staticmethod
+    def find_king(state, color: Literal[256, 512]):
+        return np.where(state == color | Piece.KING) 
+
     def get_enemies(self, color) -> Dict[np.uint32, Tuple[np.uint32, Tuple[int, int]]]:
         # ecolor = Piece.get_enemy_color(color)
         # enemies = []

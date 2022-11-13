@@ -1,4 +1,4 @@
-# import numpy as np
+import numpy as np
 from .move import Move, MoveDirection
 from typing import Tuple, Set, Callable, Dict, Optional
 from chess.pieces.piece import Piece

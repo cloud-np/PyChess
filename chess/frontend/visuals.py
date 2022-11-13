@@ -1,6 +1,7 @@
 """Creates the visuals for the game."""
 from email.policy import default
 import numpy as np
+from chess.frontend.components.background import Background
 import pygame as py_g
 from typing import List, Tuple, Optional, Any
 from colorama import Fore
@@ -28,32 +29,7 @@ class EventType:
     SHOW_IMGS = 5
     MOUSE_BUTTONDOWN = 6
     MOUSE_BUTTONUP = 7
-
-
-class Background(py_g.sprite.Sprite):
-    """Helper class to keep showing a background image.
-
-    Parameters
-    ----------
-    pygame : Pygame
-        Helps us to visualize the background img.
-    """
-
-    def __init__(self, image_file: str, location: Tuple[int, int]):
-        """Needs basic components for inisializing the bg.
-
-        Parameters
-        ----------
-        image_file : str
-            where the img file is located.
-        location : list()
-            where it should be showing on the screen.
-        """
-        py_g.sprite.Sprite.__init__(self)
-        self.image = py_g.transform.scale(
-            py_g.image.load(image_file), BOARD_SIZE)
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = location
+    FLIP_BOARD = 8
 
 
 class Tile:
@@ -107,12 +83,12 @@ class GameVisuals:
         self.show_imgs: bool = False
         self.is_running: bool = False
         self.is_piece_picked: bool = False
-        self.promoting_piece: Optional[int] = None
+        self.promoting_piece: Optional[np.uint32] = None
         self.clock = py_g.time.Clock()
         self.screen = py_g.display.set_mode(VISUAL_BOARD_SIZE)
         self.picked_piece = {"img": None, "coords": None}
         self.board_offset: Tuple[int, int] = tuple((vbaxis - baxis) // 2 for vbaxis, baxis in zip(VISUAL_BOARD_SIZE, BOARD_SIZE))
-        self.background = Background(f"{IMGS_PATH}/board.png", self.board_offset)
+        self.background = Background(f"{IMGS_PATH}/board.png", self.board_offset, BOARD_SIZE)
         self.tiles: List[List[Tile]] = [[Tile((i, j)) for i in range(8)] for j in range(8)]
         self.picked_piece = {"img": None, "coords": None}
 
@@ -225,12 +201,11 @@ class GameVisuals:
 
     #     py_g.draw.rect(self.screen, rect[0][4], (rect[0][0], rect[0][1], rect[0][2], rect[0][3]))
     #     py_g.draw.rect(self.screen, rect[1][4], (rect[1][0], rect[1][1], rect[1][2], rect[1][3]))
+    def flip_board(self) -> None:
+        print("Flipping board...")
 
     def main_loop(self) -> None:
         """Major visual loop of the program."""
-        # Game Loop
-        # rect_img = clicked_rect = None
-        # player_turn = 0
         self.is_running = True
 
         while self.is_running:
@@ -264,6 +239,8 @@ class GameVisuals:
                 self.show_normalized_indexes = not self.show_normalized_indexes
             elif event_code == EventType.SHOW_IMGS:
                 self.show_imgs = not self.show_imgs
+            elif event_code == EventType.FLIP_BOARD:
+                self.flip_board()
             elif event_code == EventType.MOUSE_BUTTONDOWN:
                 if self.promoting_piece:
                     self.click_promote((mx, my))
@@ -350,20 +327,6 @@ class GameVisuals:
             self.change_cursor("arrow")
             return True
         return False
-
-    # def place_castling_rook(self, castle_side: CastleSide):
-    #     """Place the rook on the screen from the given positions.
-
-    #     Parameters
-    #     ----------
-    #     castling_info : dict
-    #         This includes the info of where the rook will be placed and were it used to be.
-    #     """
-    #     new_rook_coords, rook_coords = CastleSide.get_rook_posistions(castle_side)
-    #     rook_tile = self.tiles[rook_coords[0]][rook_coords[1]]
-    #     new_rook_tile = self.tiles[new_rook_coords[0]][new_rook_coords[1]]
-    #     new_rook_tile.piece_img = rook_tile.piece_img
-    #     rook_tile.piece_img = None
 
     def place_picked_piece_back(self) -> None:
         """Place the picked piece back to its original tile."""
@@ -470,6 +433,8 @@ class GameVisuals:
                     return EventType.SHOW_NORMALIZED_INDEX
                 if event.key == py_g.K_3:
                     return EventType.SHOW_IMGS
+                if event.key == py_g.K_f:
+                    return EventType.FLIP_BOARD
 
                 #     pick_piece(mouse_x, mouse_y)
             # elif P2_COMPUTER and history['player'] % 2 != 0:

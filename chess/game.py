@@ -116,8 +116,10 @@ class Game:
     
     def get_legal_coords(self, start_coords):
         all_possible_coords = self.get_piece_possible_coords(start_coords)
+        print(self.board)
         # Remove the illegal moves
         all_possible_coords -= self.get_piece_illegal_coords(start_coords, self.board.state[start_coords], all_possible_coords)
+        print(self.board)
         return all_possible_coords
 
     def get_all_possible_moves(self) -> List[Tuple[int, Tuple[int, int]]]:
@@ -140,6 +142,7 @@ class Game:
         """Get all the possible coords."""
         piece = self.board.state[start_coords]
         coords_set = self.movegen.get_possible_coords((piece, start_coords))
+
         if Piece.get_type(piece) == Piece.KING:
             if castling_moves := self.get_castling_coords(piece):
                 coords_set = coords_set | castling_moves
@@ -207,13 +210,17 @@ class Game:
         illegal_coords = set()
 
         @self.simulate_move
-        def __play_possibly_illegal_move(start_coords, end_coords):
-            is_king_in_check = self.movegen.is_king_in_check(enemies, self.board.get_king_coords(pcolor))
+        def __play_possibly_illegal_move(sim_state, start_coords, end_coords):
+            # We do not use this func:
+            # self.board.get_king_coords(pcolor)
+            # Because we want to simulate the move without updating the board.
+            king_coords = tuple(map(int, Board.find_king(sim_state, pcolor)))
+            is_king_in_check = self.movegen.is_king_in_check(enemies, king_coords)
             if is_king_in_check:
                 illegal_coords.add(end_coords)
 
         for crd in coords_set:
-            __play_possibly_illegal_move(start_coords, crd)
+            __play_possibly_illegal_move(sim_state, start_coords, crd)
         return illegal_coords
 
     def simulate_move(self, func):
@@ -226,16 +233,16 @@ class Game:
         func : function
             The function that should changes a board state.
         """
-        def __sim_seq(piece, start_coords, end_coords):
-            self.board.state[end_coords] = piece
-            self.board.state[start_coords] = Piece.EMPTY
+        def __sim_seq(state, piece, start_coords, end_coords):
+            state[end_coords] = piece
+            state[start_coords] = Piece.EMPTY
 
         def __simulate_move(state, start_coords: tuple, end_coords: tuple) -> None:
             piece = state[start_coords]
-            __sim_seq(piece, start_coords=start_coords, end_coords=end_coords)
+            __sim_seq(state, piece, start_coords=start_coords, end_coords=end_coords)
             func(state, start_coords, end_coords)
             # Simpliest thing to do simulate back what you simulated above.
-            __sim_seq(piece, start_coords=end_coords, end_coords=start_coords)
+            __sim_seq(state, piece, start_coords=end_coords, end_coords=start_coords)
         return __simulate_move
 
     def is_piece_turn(self, start_coords):

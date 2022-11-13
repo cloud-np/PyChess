@@ -1,6 +1,7 @@
 """Includes the class for each Pawn."""
 from chess.pieces.piece import Piece
 from chess.moves.move import MoveDirection
+import numpy as np
 
 
 class King(Piece):
